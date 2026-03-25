@@ -125,8 +125,8 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
       toast.error("Failed to load formulas");
       console.error(error);
     } else {
-      setFormulas(data || []);
-      calculatePercentages(data || []);
+      setFormulas((data as unknown as Formula[]) || []);
+      calculatePercentages((data as unknown as Formula[]) || []);
     }
     setIsLoading(false);
   };
