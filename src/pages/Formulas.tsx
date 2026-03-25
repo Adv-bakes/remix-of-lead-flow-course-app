@@ -171,7 +171,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
       toast.error("Failed to add row");
       console.error(error);
     } else {
-      setFormulas([...formulas, data]);
+      setFormulas([...formulas, data as unknown as Formula]);
     }
   };
 
