@@ -88,9 +88,9 @@ const OperationsHub = () => {
 
     const { error } = await supabase.from("production_intake").insert({
       user_id: user.id,
-      product_id: parseInt(selectedProductId),
+      product_id: selectedProductId,
       number_of_cases: parseInt(numberOfCases),
-    });
+    } as any);
     setSubmitting(false);
     if (error) {
       toast.error("Failed to save order intake.");
