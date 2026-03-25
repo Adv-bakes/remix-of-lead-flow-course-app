@@ -67,7 +67,7 @@ const FormulaDialog = ({ open, onOpenChange, editingItem, conceptId }: FormulaDi
   const [showIngredientDialog, setShowIngredientDialog] = useState(false);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedIngredientId, setSelectedIngredientId] = useState<number | null>(null);
+  const [selectedIngredientId, setSelectedIngredientId] = useState<string | null>(null);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [formData, setFormData] = useState({
     ingredient_name: "",
