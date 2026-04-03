@@ -477,6 +477,12 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       return;
     }
     setValidationErrors({});
+    if (editingFromPreview) {
+      setEditingFromPreview(false);
+      setCurrentStep(TOTAL_STEPS);
+      setShowPreviewModal(true);
+      return;
+    }
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     }
