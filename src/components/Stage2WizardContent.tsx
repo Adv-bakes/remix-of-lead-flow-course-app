@@ -104,6 +104,30 @@ const initialData: WizardData = {
   additionalProjectInfo: "",
 };
 
+const REQUIRED_SUBMISSION_FIELDS: Array<keyof WizardData> = [
+  "projectType",
+  "customerName",
+  "productName",
+  "developmentApproach",
+  "flavorType",
+  "packagingReadiness",
+  "primaryPackagingVessel",
+  "weightPerUnit",
+  "unitDimensionL",
+  "unitDimensionW",
+  "unitDimensionH",
+  "unitsPerPrimaryPack",
+  "netWeightPerPrimaryPack",
+  "secondaryPackaging",
+  "artworkReadiness",
+  "labelResponsibility",
+  "targetDate",
+  "priceTargetPerUnit",
+  "annualVolume",
+  "orderQuantity",
+  "orderFrequency",
+];
+
 const STEPS = [
   { id: 1, title: "Project Type", section: "Project Basics" },
   { id: 2, title: "Customer & Product Name", section: "Project Basics" },
@@ -198,6 +222,40 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       return "Please select at least one option or 'None of the above'";
     }
     return null;
+  };
+
+  const getSubmissionValidationIssues = (data: WizardData) => {
+    const missingFields = REQUIRED_SUBMISSION_FIELDS.filter((field) => !String(data[field] ?? "").trim());
+
+    if (data.finishedForm.length === 0) missingFields.push("finishedForm");
+    if (data.intendedApplication.length === 0) missingFields.push("intendedApplication");
+    if (data.additionalRequirements.length === 0) missingFields.push("additionalRequirements");
+    if (data.warehousingNeeds.length === 0) missingFields.push("warehousingNeeds");
+
+    if (data.primaryPackagingVessel === "Other (text)" && !data.primaryPackagingOther.trim()) {
+      missingFields.push("primaryPackagingOther");
+    }
+
+    if (
+      data.secondaryPackaging !== "Not determined yet" &&
+      data.secondaryPackaging !== "None" &&
+      !data.unitsPerVessel.trim()
+    ) {
+      missingFields.push("unitsPerVessel");
+    }
+
+    if (!data.shippingTBD) {
+      if (!data.masterCartonRequirements.trim()) missingFields.push("masterCartonRequirements");
+      if (!data.palletsRequired.trim()) missingFields.push("palletsRequired");
+    }
+
+    if (!data.sameAsInitialContact) {
+      if (validateContactName(data.technicalContactName)) missingFields.push("technicalContactName");
+      if (validateEmail(data.technicalContactEmail)) missingFields.push("technicalContactEmail");
+      if (validatePhone(data.technicalContactPhone)) missingFields.push("technicalContactPhone");
+    }
+
+    return Array.from(new Set(missingFields));
   };
 
   const isStepValid = (): boolean => {
@@ -408,14 +466,18 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
 
   const createNewSubmission = async () => {
     const newId = crypto.randomUUID();
+    const draftPayload = {
+      id: newId,
+      company_stage: companyStage,
+      status: "draft" as const,
+      data_json: JSON.parse(JSON.stringify(initialData)),
+    };
+
+    console.log("[PRF] Creating stage2 draft", draftPayload);
+
     const { data, error } = await supabase
       .from("stage2_prf_submissions")
-      .insert([{
-        id: newId,
-        company_stage: companyStage,
-        status: "draft" as const,
-        data_json: JSON.parse(JSON.stringify(initialData)),
-      }])
+      .insert([draftPayload])
       .select()
       .single();
 
@@ -459,9 +521,15 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
     if (!submissionId) return;
     
     setIsSaving(true);
+    const draftUpdatePayload = { data_json: JSON.parse(JSON.stringify(updatedData)) };
+    console.log("[PRF] Auto-saving stage2 draft", {
+      submissionId,
+      payload: draftUpdatePayload,
+    });
+
     const { error } = await supabase
       .from("stage2_prf_submissions")
-      .update({ data_json: JSON.parse(JSON.stringify(updatedData)) })
+      .update(draftUpdatePayload)
       .eq("id", submissionId);
 
     if (error) {
@@ -519,19 +587,57 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
   };
 
   const handleSubmit = async () => {
-    if (!submissionId) return;
+    if (!submissionId) {
+      console.error("[PRF] Missing submissionId on submit", { formData, companyStage });
+      toast({
+        title: "Submission failed",
+        description: "Your draft could not be found. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const missingFields = getSubmissionValidationIssues(formData);
+    const stage2SubmitPayload = {
+      status: "submitted",
+      submitted_at: new Date().toISOString(),
+      company_stage: companyStage,
+      data_json: JSON.parse(JSON.stringify(formData)),
+    };
+
+    console.log("[PRF] Final stage2 submit attempt", {
+      submissionId,
+      hasAuthenticatedSession: !!sessionData.session,
+      authUserId: sessionData.session?.user?.id ?? null,
+      companyStage,
+      missingFields,
+      payload: stage2SubmitPayload,
+    });
+
+    if (missingFields.length > 0) {
+      console.error("[PRF] Blocking submit due to validation issues", { missingFields, formData });
+      toast({
+        title: "Please complete required fields",
+        description: `Missing or invalid fields: ${missingFields.join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     const { error } = await supabase
       .from("stage2_prf_submissions")
-      .update({ 
-        status: "submitted",
-        submitted_at: new Date().toISOString(),
-        data_json: JSON.parse(JSON.stringify(formData))
-      })
+      .update(stage2SubmitPayload)
       .eq("id", submissionId);
 
     if (error) {
+      console.error("[PRF] stage2 submit update failed", {
+        submissionId,
+        payload: stage2SubmitPayload,
+        error,
+      });
       setIsSubmitting(false);
       toast({
         title: "Submission failed",
@@ -541,52 +647,56 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       return;
     }
 
+    const finalPrfPayload = {
+      company_stage: companyStage,
+      founder_name: formData.technicalContactName || null,
+      company_name: formData.customerName || null,
+      email: formData.technicalContactEmail || null,
+      phone: formData.technicalContactPhone || null,
+      project_type: formData.projectType || null,
+      product_name: formData.productName || null,
+      development_approach: formData.developmentApproach || null,
+      finished_form: formData.finishedForm,
+      is_nutraceutical: formData.isNutraceutical,
+      flavor_type: formData.flavorType || null,
+      intended_application: formData.intendedApplication,
+      additional_requirements: formData.additionalRequirements,
+      packaging_readiness: formData.packagingReadiness || null,
+      primary_packaging_vessel: formData.primaryPackagingVessel || null,
+      primary_packaging_other: formData.primaryPackagingOther || null,
+      weight_per_unit: formData.weightPerUnit || null,
+      weight_per_unit_unit: formData.weightPerUnitUnit || null,
+      unit_dimension_l: formData.unitDimensionL || null,
+      unit_dimension_w: formData.unitDimensionW || null,
+      unit_dimension_h: formData.unitDimensionH || null,
+      unit_dimension_unit: formData.unitDimensionUnit || null,
+      units_per_primary_pack: formData.unitsPerPrimaryPack || null,
+      net_weight_per_primary_pack: formData.netWeightPerPrimaryPack || null,
+      net_weight_per_primary_pack_unit: formData.netWeightPerPrimaryPackUnit || null,
+      secondary_packaging: formData.secondaryPackaging || null,
+      secondary_packaging_other: formData.secondaryPackagingOther || null,
+      units_per_vessel: formData.unitsPerVessel || null,
+      artwork_readiness: formData.artworkReadiness || null,
+      label_responsibility: formData.labelResponsibility || null,
+      master_carton_requirements: formData.masterCartonRequirements || null,
+      pallets_required: formData.palletsRequired || null,
+      shipping_tbd: formData.shippingTBD,
+      target_date: formData.targetDate || null,
+      price_target_per_unit: formData.priceTargetPerUnit || null,
+      annual_volume: formData.annualVolume || null,
+      order_quantity: formData.orderQuantity || null,
+      order_frequency: formData.orderFrequency || null,
+      warehousing_needs: formData.warehousingNeeds,
+      additional_project_info: formData.additionalProjectInfo || null,
+      stage2_submission_id: submissionId,
+    };
+
+    console.log("[PRF] Inserting final prf_submissions row", finalPrfPayload);
+
     // Insert into prf_submissions with explicit columns
     const { error: prfError } = await supabase
       .from("prf_submissions" as any)
-      .insert([{
-        company_stage: companyStage,
-        founder_name: formData.technicalContactName || null,
-        company_name: formData.customerName || null,
-        email: formData.technicalContactEmail || null,
-        phone: formData.technicalContactPhone || null,
-        project_type: formData.projectType || null,
-        product_name: formData.productName || null,
-        development_approach: formData.developmentApproach || null,
-        finished_form: formData.finishedForm,
-        is_nutraceutical: formData.isNutraceutical,
-        flavor_type: formData.flavorType || null,
-        intended_application: formData.intendedApplication,
-        additional_requirements: formData.additionalRequirements,
-        packaging_readiness: formData.packagingReadiness || null,
-        primary_packaging_vessel: formData.primaryPackagingVessel || null,
-        primary_packaging_other: formData.primaryPackagingOther || null,
-        weight_per_unit: formData.weightPerUnit || null,
-        weight_per_unit_unit: formData.weightPerUnitUnit || null,
-        unit_dimension_l: formData.unitDimensionL || null,
-        unit_dimension_w: formData.unitDimensionW || null,
-        unit_dimension_h: formData.unitDimensionH || null,
-        unit_dimension_unit: formData.unitDimensionUnit || null,
-        units_per_primary_pack: formData.unitsPerPrimaryPack || null,
-        net_weight_per_primary_pack: formData.netWeightPerPrimaryPack || null,
-        net_weight_per_primary_pack_unit: formData.netWeightPerPrimaryPackUnit || null,
-        secondary_packaging: formData.secondaryPackaging || null,
-        secondary_packaging_other: formData.secondaryPackagingOther || null,
-        units_per_vessel: formData.unitsPerVessel || null,
-        artwork_readiness: formData.artworkReadiness || null,
-        label_responsibility: formData.labelResponsibility || null,
-        master_carton_requirements: formData.masterCartonRequirements || null,
-        pallets_required: formData.palletsRequired || null,
-        shipping_tbd: formData.shippingTBD,
-        target_date: formData.targetDate || null,
-        price_target_per_unit: formData.priceTargetPerUnit || null,
-        annual_volume: formData.annualVolume || null,
-        order_quantity: formData.orderQuantity || null,
-        order_frequency: formData.orderFrequency || null,
-        warehousing_needs: formData.warehousingNeeds,
-        additional_project_info: formData.additionalProjectInfo || null,
-        stage2_submission_id: submissionId,
-      }]);
+      .insert([finalPrfPayload]);
 
     if (prfError) {
       console.error("PRF submissions insert error:", prfError);
