@@ -1639,7 +1639,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               </div>
               <div>
                 <Label htmlFor="priceTargetPerUnit" style={{ color: '#2C1810' }}>
-                  Target X-Factory Cost per Unit <span className="text-red-500">*</span>
+                  Target X-Factory Cost per Sellable Unit <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="priceTargetPerUnit"
