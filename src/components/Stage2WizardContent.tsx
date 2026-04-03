@@ -128,17 +128,17 @@ const STEPS = [
 const TOTAL_STEPS = STEPS.length;
 
 const PreviewField = ({ label, value, step, onEdit }: { label: string; value: string; step: number; onEdit: (step: number) => void }) => (
-  <div className="flex items-center justify-between py-1 group">
+  <div className="flex items-center justify-between py-1.5 group">
     <div className="flex items-center gap-2 min-w-0 flex-1">
       <span className="shrink-0" style={{ color: '#8B7355' }}>{label}:</span>
       <span className="truncate">{value || '—'}</span>
     </div>
     <button
       onClick={() => onEdit(step)}
-      className="shrink-0 ml-2 opacity-0 group-hover:opacity-70 hover:!opacity-100 transition-opacity p-1 rounded hover:bg-accent/10"
+      className="shrink-0 ml-3 opacity-60 group-hover:opacity-100 hover:!opacity-100 transition-opacity p-2 rounded-md hover:bg-[#C89B3C]/10"
       title={`Edit ${label}`}
     >
-      <Pencil className="w-3 h-3" style={{ color: '#C89B3C' }} />
+      <Pencil className="w-4 h-4" style={{ color: '#B8892C' }} />
     </button>
   </div>
 );
