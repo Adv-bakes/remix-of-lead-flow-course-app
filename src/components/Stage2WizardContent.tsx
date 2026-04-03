@@ -2074,8 +2074,8 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                   onClick={handleNext}
                   className="flex items-center gap-2 bg-gradient-to-r from-[#C89B3C] to-[#D4A855] hover:from-[#B8892C] hover:to-[#C89B3C] text-white"
                 >
-                  Next
-                  <ArrowRight className="w-4 h-4" />
+                  {editingFromPreview ? 'Save & Return to Preview' : 'Next'}
+                  {editingFromPreview ? <CheckCircle className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                 </Button>
               )}
             </div>
