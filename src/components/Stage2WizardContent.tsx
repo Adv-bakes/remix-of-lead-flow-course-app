@@ -2040,11 +2040,11 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
 
               {currentStep === TOTAL_STEPS ? (
                 <Button
-                  onClick={handleSubmit}
+                  onClick={() => setShowPreviewModal(true)}
                   className="flex items-center gap-2 bg-gradient-to-r from-[#C89B3C] to-[#D4A855] hover:from-[#B8892C] hover:to-[#C89B3C] text-white"
                 >
-                  Submit PRF
-                  <CheckCircle className="w-4 h-4" />
+                  <Eye className="w-4 h-4" />
+                  Preview Submission
                 </Button>
               ) : (
                 <Button
