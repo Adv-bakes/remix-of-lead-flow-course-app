@@ -2053,12 +2053,20 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
             <div className="flex justify-between mt-8 pt-6 border-t" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
               <Button
                 variant="outline"
-                onClick={handleBack}
-                disabled={currentStep === 1}
+                onClick={() => {
+                  if (editingFromPreview) {
+                    setEditingFromPreview(false);
+                    setCurrentStep(TOTAL_STEPS);
+                    setShowPreviewModal(true);
+                  } else {
+                    handleBack();
+                  }
+                }}
+                disabled={currentStep === 1 && !editingFromPreview}
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                {editingFromPreview ? 'Cancel Edit' : 'Back'}
               </Button>
 
               {currentStep === TOTAL_STEPS ? (
