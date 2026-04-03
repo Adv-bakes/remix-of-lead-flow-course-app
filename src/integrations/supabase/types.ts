@@ -305,6 +305,93 @@ export type Database = {
         }
         Relationships: []
       }
+      email_send_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          message_id: string | null
+          metadata: Json | null
+          recipient_email: string | null
+          status: string
+          template_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          recipient_email?: string | null
+          status?: string
+          template_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          recipient_email?: string | null
+          status?: string
+          template_name?: string | null
+        }
+        Relationships: []
+      }
+      email_send_state: {
+        Row: {
+          auth_email_ttl_minutes: number
+          batch_size: number
+          created_at: string
+          id: number
+          retry_after_until: string | null
+          send_delay_ms: number
+          transactional_email_ttl_minutes: number
+        }
+        Insert: {
+          auth_email_ttl_minutes?: number
+          batch_size?: number
+          created_at?: string
+          id?: number
+          retry_after_until?: string | null
+          send_delay_ms?: number
+          transactional_email_ttl_minutes?: number
+        }
+        Update: {
+          auth_email_ttl_minutes?: number
+          batch_size?: number
+          created_at?: string
+          id?: number
+          retry_after_until?: string | null
+          send_delay_ms?: number
+          transactional_email_ttl_minutes?: number
+        }
+        Relationships: []
+      }
+      email_unsubscribe_tokens: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       formulas: {
         Row: {
           concept_id: number | null
@@ -571,6 +658,7 @@ export type Database = {
           created_at: string
           development_approach: string | null
           email: string | null
+          email_sent: boolean | null
           finished_form: Json | null
           flavor_type: string | null
           founder_name: string | null
@@ -617,6 +705,7 @@ export type Database = {
           created_at?: string
           development_approach?: string | null
           email?: string | null
+          email_sent?: boolean | null
           finished_form?: Json | null
           flavor_type?: string | null
           founder_name?: string | null
@@ -663,6 +752,7 @@ export type Database = {
           created_at?: string
           development_approach?: string | null
           email?: string | null
+          email_sent?: boolean | null
           finished_form?: Json | null
           flavor_type?: string | null
           founder_name?: string | null
@@ -1144,6 +1234,30 @@ export type Database = {
         }
         Relationships: []
       }
+      suppressed_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          metadata: Json | null
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          metadata?: Json | null
+          reason?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -1195,8 +1309,34 @@ export type Database = {
         Args: { _token: string; _user_id: string }
         Returns: undefined
       }
+      delete_email: {
+        Args: { msg_id: number; queue_name: string }
+        Returns: boolean
+      }
+      enqueue_email: {
+        Args: { payload: Json; queue_name: string }
+        Returns: undefined
+      }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_staff_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      move_to_dlq: {
+        Args: { msg_id: number; queue_name: string }
+        Returns: boolean
+      }
+      read_email_batch: {
+        Args: {
+          batch_size: number
+          queue_name: string
+          visibility_timeout?: number
+        }
+        Returns: {
+          enqueued_at: string
+          message: Json
+          msg_id: number
+          read_ct: number
+          vt: string
+        }[]
+      }
       validate_invitation_token: {
         Args: { _token: string }
         Returns: {
