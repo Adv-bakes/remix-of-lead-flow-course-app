@@ -77,6 +77,9 @@ const GatewayEntry = () => {
       // For now, we'll just show a success message and proceed
       console.log("Lead captured:", formData);
       
+      // Persist lead data to localStorage so Stage 2 wizard can access it
+      localStorage.setItem("prfLeadData", JSON.stringify(formData));
+      
       toast.success("Information saved! Let's find the right path for you.");
       setShowChoiceScreen(true);
     } catch (error) {

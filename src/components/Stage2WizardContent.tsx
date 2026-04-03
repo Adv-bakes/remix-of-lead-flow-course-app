@@ -715,18 +715,29 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       } catch (e) { /* ignore */ }
     }
     const emailRecipient = initialEmail || formData.technicalContactEmail;
+    console.log("[PRF] Email send attempt", { initialEmail, technicalContactEmail: formData.technicalContactEmail, emailRecipient, initialLeadData: !!initialLeadData });
     if (emailRecipient) {
+      const emailBody = {
+        recipientEmail: emailRecipient,
+        founderName: initialName || formData.technicalContactName || null,
+        companyName: formData.customerName || null,
+        productName: formData.productName || null,
+        projectType: formData.projectType || null,
+      };
+      console.log("[PRF] Invoking send-prf-confirmation with:", emailBody);
       supabase.functions.invoke("send-prf-confirmation", {
-        body: {
-          recipientEmail: emailRecipient,
-          founderName: initialName || formData.technicalContactName || null,
-          companyName: formData.customerName || null,
-          productName: formData.productName || null,
-          projectType: formData.projectType || null,
-        },
+        body: emailBody,
+      }).then((res) => {
+        if (res.error) {
+          console.error("[PRF] Email function returned error:", res.error);
+        } else {
+          console.log("[PRF] Email function response:", res.data);
+        }
       }).catch((emailErr) => {
-        console.error("PRF confirmation email error:", emailErr);
+        console.error("[PRF] Email invoke failed:", emailErr);
       });
+    } else {
+      console.warn("[PRF] No email recipient found — confirmation email NOT sent. Check that prfLeadData exists in localStorage.");
     }
 
     localStorage.removeItem("stage2SubmissionId");
