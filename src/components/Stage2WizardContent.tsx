@@ -1151,7 +1151,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                           if (validationErrors.weightPerUnit) {
                             setValidationErrors(prev => ({ ...prev, weightPerUnit: '', netWeightPerPrimaryPack: '' }));
                           }
-                        }
+                        }}
                         placeholder="e.g., 4"
                         className={`flex-1 ${validationErrors.weightPerUnit ? 'border-red-500' : ''}`}
                       />
