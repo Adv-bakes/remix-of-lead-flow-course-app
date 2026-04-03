@@ -141,6 +141,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
   const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [editingFromPreview, setEditingFromPreview] = useState(false);
 
   const progressPercent = (currentStep / TOTAL_STEPS) * 100;
 
@@ -476,6 +477,12 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       return;
     }
     setValidationErrors({});
+    if (editingFromPreview) {
+      setEditingFromPreview(false);
+      setCurrentStep(TOTAL_STEPS);
+      setShowPreviewModal(true);
+      return;
+    }
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     }
@@ -2046,12 +2053,20 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
             <div className="flex justify-between mt-8 pt-6 border-t" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
               <Button
                 variant="outline"
-                onClick={handleBack}
-                disabled={currentStep === 1}
+                onClick={() => {
+                  if (editingFromPreview) {
+                    setEditingFromPreview(false);
+                    setCurrentStep(TOTAL_STEPS);
+                    setShowPreviewModal(true);
+                  } else {
+                    handleBack();
+                  }
+                }}
+                disabled={currentStep === 1 && !editingFromPreview}
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                {editingFromPreview ? 'Cancel Edit' : 'Back'}
               </Button>
 
               {currentStep === TOTAL_STEPS ? (
@@ -2067,8 +2082,8 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                   onClick={handleNext}
                   className="flex items-center gap-2 bg-gradient-to-r from-[#C89B3C] to-[#D4A855] hover:from-[#B8892C] hover:to-[#C89B3C] text-white"
                 >
-                  Next
-                  <ArrowRight className="w-4 h-4" />
+                  {editingFromPreview ? 'Save & Return to Preview' : 'Next'}
+                  {editingFromPreview ? <CheckCircle className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                 </Button>
               )}
             </div>
@@ -2088,7 +2103,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold">Project Basics</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(1); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(1); }}>
                     <Edit className="w-3 h-3 mr-1" /> Edit
                   </Button>
                 </div>
@@ -2108,7 +2123,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold">Product Type / Status</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(4); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(4); }}>
                     <Edit className="w-3 h-3 mr-1" /> Edit
                   </Button>
                 </div>
@@ -2128,7 +2143,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold">Claims / Certifications</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(8); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(8); }}>
                     <Edit className="w-3 h-3 mr-1" /> Edit
                   </Button>
                 </div>
@@ -2142,7 +2157,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold">Packaging</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(9); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(9); }}>
                     <Edit className="w-3 h-3 mr-1" /> Edit
                   </Button>
                 </div>
@@ -2172,7 +2187,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold">Shipping</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(13); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(13); }}>
                     <Edit className="w-3 h-3 mr-1" /> Edit
                   </Button>
                 </div>
@@ -2190,7 +2205,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold">Volumes / Timing / Ops</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(14); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(14); }}>
                     <Edit className="w-3 h-3 mr-1" /> Edit
                   </Button>
                 </div>
@@ -2214,7 +2229,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold">Technical / R&D Contact</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(17); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(17); }}>
                     <Edit className="w-3 h-3 mr-1" /> Edit
                   </Button>
                 </div>
@@ -2235,7 +2250,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                 <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold">Additional Notes</h3>
-                    <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(18); }}>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(18); }}>
                       <Edit className="w-3 h-3 mr-1" /> Edit
                     </Button>
                   </div>
