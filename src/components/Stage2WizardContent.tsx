@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, ArrowRight, CheckCircle, Eye, Edit } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, Eye, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
@@ -127,6 +127,22 @@ const STEPS = [
 
 const TOTAL_STEPS = STEPS.length;
 
+const PreviewField = ({ label, value, step, onEdit }: { label: string; value: string; step: number; onEdit: (step: number) => void }) => (
+  <div className="flex items-center justify-between py-1 group">
+    <div className="flex items-center gap-2 min-w-0 flex-1">
+      <span className="shrink-0" style={{ color: '#8B7355' }}>{label}:</span>
+      <span className="truncate">{value || '—'}</span>
+    </div>
+    <button
+      onClick={() => onEdit(step)}
+      className="shrink-0 ml-2 opacity-0 group-hover:opacity-70 hover:!opacity-100 transition-opacity p-1 rounded hover:bg-accent/10"
+      title={`Edit ${label}`}
+    >
+      <Pencil className="w-3 h-3" style={{ color: '#C89B3C' }} />
+    </button>
+  </div>
+);
+
 interface Stage2WizardContentProps {
   companyStage: CompanyStage;
   isStartup: boolean;
@@ -142,6 +158,11 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [editingFromPreview, setEditingFromPreview] = useState(false);
+  const goToEditStep = (step: number) => {
+    setShowPreviewModal(false);
+    setEditingFromPreview(true);
+    setCurrentStep(step);
+  };
 
   const progressPercent = (currentStep / TOTAL_STEPS) * 100;
 
@@ -2101,160 +2122,91 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
 
               {/* Project Basics */}
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Project Basics</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(1); }}>
-                    <Edit className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <span style={{ color: '#8B7355' }}>Project Type:</span>
-                  <span>{formData.projectType || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Customer:</span>
-                  <span>{formData.customerName || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Product:</span>
-                  <span>{formData.productName || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Development Approach:</span>
-                  <span>{formData.developmentApproach || '—'}</span>
+                <h3 className="font-semibold mb-2">Project Basics</h3>
+                <div className="space-y-1">
+                  <PreviewField label="Project Type" value={formData.projectType} step={1} onEdit={goToEditStep} />
+                  <PreviewField label="Customer" value={formData.customerName} step={2} onEdit={goToEditStep} />
+                  <PreviewField label="Product" value={formData.productName} step={2} onEdit={goToEditStep} />
+                  <PreviewField label="Development Approach" value={formData.developmentApproach} step={3} onEdit={goToEditStep} />
                 </div>
               </div>
 
               {/* Product Type / Status */}
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Product Type / Status</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(4); }}>
-                    <Edit className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <span style={{ color: '#8B7355' }}>Finished Form:</span>
-                  <span>{formData.finishedForm.length > 0 ? formData.finishedForm.join(', ') : '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Nutraceutical:</span>
-                  <span>{formData.isNutraceutical ? 'Yes' : 'No'}</span>
-                  <span style={{ color: '#8B7355' }}>Flavor Type:</span>
-                  <span>{formData.flavorType || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Intended Application:</span>
-                  <span>{formData.intendedApplication.length > 0 ? formData.intendedApplication.join(', ') : '—'}</span>
+                <h3 className="font-semibold mb-2">Product Type / Status</h3>
+                <div className="space-y-1">
+                  <PreviewField label="Finished Form" value={formData.finishedForm.length > 0 ? formData.finishedForm.join(', ') : ''} step={4} onEdit={goToEditStep} />
+                  <PreviewField label="Nutraceutical" value={formData.isNutraceutical ? 'Yes' : 'No'} step={5} onEdit={goToEditStep} />
+                  <PreviewField label="Flavor Type" value={formData.flavorType} step={6} onEdit={goToEditStep} />
+                  <PreviewField label="Intended Application" value={formData.intendedApplication.length > 0 ? formData.intendedApplication.join(', ') : ''} step={7} onEdit={goToEditStep} />
                 </div>
               </div>
 
               {/* Claims / Certifications */}
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Claims / Certifications</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(8); }}>
-                    <Edit className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <span style={{ color: '#8B7355' }}>Requirements:</span>
-                  <span>{formData.additionalRequirements.length > 0 ? formData.additionalRequirements.join(', ') : '—'}</span>
+                <h3 className="font-semibold mb-2">Claims / Certifications</h3>
+                <div className="space-y-1">
+                  <PreviewField label="Requirements" value={formData.additionalRequirements.length > 0 ? formData.additionalRequirements.join(', ') : ''} step={8} onEdit={goToEditStep} />
                 </div>
               </div>
 
               {/* Packaging */}
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Packaging</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(9); }}>
-                    <Edit className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <span style={{ color: '#8B7355' }}>Readiness:</span>
-                  <span>{formData.packagingReadiness || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Primary Packaging:</span>
-                  <span>{formData.primaryPackagingVessel === 'Other (text)' ? formData.primaryPackagingOther : formData.primaryPackagingVessel || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Weight/Unit:</span>
-                  <span>{formData.weightPerUnit ? `${formData.weightPerUnit} ${formData.weightPerUnitUnit}` : '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Dimensions:</span>
-                  <span>{formData.unitDimensionL ? `${formData.unitDimensionL} × ${formData.unitDimensionW} × ${formData.unitDimensionH} ${formData.unitDimensionUnit}` : '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Units/Pack:</span>
-                  <span>{formData.unitsPerPrimaryPack || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Net Weight/Pack:</span>
-                  <span>{formData.netWeightPerPrimaryPack ? `${formData.netWeightPerPrimaryPack} ${formData.netWeightPerPrimaryPackUnit}` : '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Secondary Packaging:</span>
-                  <span>{formData.secondaryPackaging === 'Other (text)' ? formData.secondaryPackagingOther : formData.secondaryPackaging || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Artwork Readiness:</span>
-                  <span>{formData.artworkReadiness || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Label Responsibility:</span>
-                  <span>{formData.labelResponsibility || '—'}</span>
+                <h3 className="font-semibold mb-2">Packaging</h3>
+                <div className="space-y-1">
+                  <PreviewField label="Readiness" value={formData.packagingReadiness} step={9} onEdit={goToEditStep} />
+                  <PreviewField label="Primary Packaging" value={formData.primaryPackagingVessel === 'Other (text)' ? formData.primaryPackagingOther : formData.primaryPackagingVessel} step={10} onEdit={goToEditStep} />
+                  <PreviewField label="Weight/Unit" value={formData.weightPerUnit ? `${formData.weightPerUnit} ${formData.weightPerUnitUnit}` : ''} step={10} onEdit={goToEditStep} />
+                  <PreviewField label="Dimensions" value={formData.unitDimensionL ? `${formData.unitDimensionL} × ${formData.unitDimensionW} × ${formData.unitDimensionH} ${formData.unitDimensionUnit}` : ''} step={10} onEdit={goToEditStep} />
+                  <PreviewField label="Units/Pack" value={formData.unitsPerPrimaryPack} step={10} onEdit={goToEditStep} />
+                  <PreviewField label="Net Weight/Pack" value={formData.netWeightPerPrimaryPack ? `${formData.netWeightPerPrimaryPack} ${formData.netWeightPerPrimaryPackUnit}` : ''} step={10} onEdit={goToEditStep} />
+                  <PreviewField label="Secondary Packaging" value={formData.secondaryPackaging === 'Other (text)' ? formData.secondaryPackagingOther : formData.secondaryPackaging} step={11} onEdit={goToEditStep} />
+                  <PreviewField label="Artwork Readiness" value={formData.artworkReadiness} step={12} onEdit={goToEditStep} />
+                  <PreviewField label="Label Responsibility" value={formData.labelResponsibility} step={12} onEdit={goToEditStep} />
                 </div>
               </div>
 
               {/* Shipping */}
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Shipping</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(13); }}>
-                    <Edit className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <span style={{ color: '#8B7355' }}>Master Carton:</span>
-                  <span>{formData.masterCartonRequirements || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Pallets Required:</span>
-                  <span>{formData.palletsRequired || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Shipping TBD:</span>
-                  <span>{formData.shippingTBD ? 'Yes' : 'No'}</span>
+                <h3 className="font-semibold mb-2">Shipping</h3>
+                <div className="space-y-1">
+                  <PreviewField label="Master Carton" value={formData.masterCartonRequirements} step={13} onEdit={goToEditStep} />
+                  <PreviewField label="Pallets Required" value={formData.palletsRequired} step={13} onEdit={goToEditStep} />
+                  <PreviewField label="Shipping TBD" value={formData.shippingTBD ? 'Yes' : 'No'} step={13} onEdit={goToEditStep} />
                 </div>
               </div>
 
               {/* Volumes / Timing / Ops */}
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Volumes / Timing / Ops</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(14); }}>
-                    <Edit className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <span style={{ color: '#8B7355' }}>Target Launch Date:</span>
-                  <span>{formData.targetDate || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Price Target/Unit:</span>
-                  <span>{formData.priceTargetPerUnit || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Annual Volume:</span>
-                  <span>{formData.annualVolume || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Order Quantity:</span>
-                  <span>{formData.orderQuantity || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Order Frequency:</span>
-                  <span>{formData.orderFrequency || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Warehousing:</span>
-                  <span>{formData.warehousingNeeds.length > 0 ? formData.warehousingNeeds.join(', ') : '—'}</span>
+                <h3 className="font-semibold mb-2">Volumes / Timing / Ops</h3>
+                <div className="space-y-1">
+                  <PreviewField label="Target Launch Date" value={formData.targetDate} step={14} onEdit={goToEditStep} />
+                  <PreviewField label="Price Target/Unit" value={formData.priceTargetPerUnit} step={14} onEdit={goToEditStep} />
+                  <PreviewField label="Annual Volume" value={formData.annualVolume} step={15} onEdit={goToEditStep} />
+                  <PreviewField label="Order Quantity" value={formData.orderQuantity} step={15} onEdit={goToEditStep} />
+                  <PreviewField label="Order Frequency" value={formData.orderFrequency} step={15} onEdit={goToEditStep} />
+                  <PreviewField label="Warehousing" value={formData.warehousingNeeds.length > 0 ? formData.warehousingNeeds.join(', ') : ''} step={16} onEdit={goToEditStep} />
                 </div>
               </div>
 
               {/* Contact */}
               <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Technical / R&D Contact</h3>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(17); }}>
-                    <Edit className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <span style={{ color: '#8B7355' }}>Same as Initial:</span>
-                  <span>{formData.sameAsInitialContact ? 'Yes' : 'No'}</span>
-                  <span style={{ color: '#8B7355' }}>Name:</span>
-                  <span>{formData.technicalContactName || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Email:</span>
-                  <span>{formData.technicalContactEmail || '—'}</span>
-                  <span style={{ color: '#8B7355' }}>Phone:</span>
-                  <span>{formData.technicalContactPhone || '—'}</span>
+                <h3 className="font-semibold mb-2">Technical / R&D Contact</h3>
+                <div className="space-y-1">
+                  <PreviewField label="Same as Initial" value={formData.sameAsInitialContact ? 'Yes' : 'No'} step={17} onEdit={goToEditStep} />
+                  <PreviewField label="Name" value={formData.technicalContactName} step={17} onEdit={goToEditStep} />
+                  <PreviewField label="Email" value={formData.technicalContactEmail} step={17} onEdit={goToEditStep} />
+                  <PreviewField label="Phone" value={formData.technicalContactPhone} step={17} onEdit={goToEditStep} />
                 </div>
               </div>
 
               {/* Additional Notes */}
               {formData.additionalProjectInfo && (
                 <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">Additional Notes</h3>
-                    <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setEditingFromPreview(true); setCurrentStep(18); }}>
-                      <Edit className="w-3 h-3 mr-1" /> Edit
-                    </Button>
+                  <h3 className="font-semibold mb-2">Additional Notes</h3>
+                  <div className="space-y-1">
+                    <PreviewField label="Notes" value={formData.additionalProjectInfo} step={18} onEdit={goToEditStep} />
                   </div>
-                  <p>{formData.additionalProjectInfo}</p>
                 </div>
               )}
 
