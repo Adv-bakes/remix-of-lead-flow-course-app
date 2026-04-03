@@ -1,1 +1,4 @@
 project_id = "zsukaixinoqmggpxxonn"
+
+[functions.send-prf-confirmation]
+verify_jwt = false

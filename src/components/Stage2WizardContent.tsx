@@ -530,6 +530,21 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       // Don't block — the stage2 submission already succeeded
     }
 
+    // Send confirmation email (non-blocking)
+    if (formData.technicalContactEmail) {
+      supabase.functions.invoke("send-prf-confirmation", {
+        body: {
+          recipientEmail: formData.technicalContactEmail,
+          founderName: formData.technicalContactName || null,
+          companyName: formData.customerName || null,
+          productName: formData.productName || null,
+          projectType: formData.projectType || null,
+        },
+      }).catch((emailErr) => {
+        console.error("PRF confirmation email error:", emailErr);
+      });
+    }
+
     localStorage.removeItem("stage2SubmissionId");
     setIsSubmitted(true);
     toast({
