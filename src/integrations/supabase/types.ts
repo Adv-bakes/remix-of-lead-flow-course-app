@@ -656,6 +656,8 @@ export type Database = {
           company_name: string | null
           company_stage: string
           created_at: string
+          customer_name: string | null
+          data_json: Json | null
           development_approach: string | null
           email: string | null
           email_sent: boolean | null
@@ -679,12 +681,17 @@ export type Database = {
           primary_packaging_vessel: string | null
           product_name: string | null
           project_type: string | null
+          same_as_initial_contact: boolean | null
           secondary_packaging: string | null
           secondary_packaging_other: string | null
           shipping_tbd: boolean | null
           stage2_submission_id: string | null
           status: string
+          submitted_at: string | null
           target_date: string | null
+          technical_contact_email: string | null
+          technical_contact_name: string | null
+          technical_contact_phone: string | null
           unit_dimension_h: string | null
           unit_dimension_l: string | null
           unit_dimension_unit: string | null
@@ -703,6 +710,8 @@ export type Database = {
           company_name?: string | null
           company_stage: string
           created_at?: string
+          customer_name?: string | null
+          data_json?: Json | null
           development_approach?: string | null
           email?: string | null
           email_sent?: boolean | null
@@ -726,12 +735,17 @@ export type Database = {
           primary_packaging_vessel?: string | null
           product_name?: string | null
           project_type?: string | null
+          same_as_initial_contact?: boolean | null
           secondary_packaging?: string | null
           secondary_packaging_other?: string | null
           shipping_tbd?: boolean | null
           stage2_submission_id?: string | null
           status?: string
+          submitted_at?: string | null
           target_date?: string | null
+          technical_contact_email?: string | null
+          technical_contact_name?: string | null
+          technical_contact_phone?: string | null
           unit_dimension_h?: string | null
           unit_dimension_l?: string | null
           unit_dimension_unit?: string | null
@@ -750,6 +764,8 @@ export type Database = {
           company_name?: string | null
           company_stage?: string
           created_at?: string
+          customer_name?: string | null
+          data_json?: Json | null
           development_approach?: string | null
           email?: string | null
           email_sent?: boolean | null
@@ -773,12 +789,17 @@ export type Database = {
           primary_packaging_vessel?: string | null
           product_name?: string | null
           project_type?: string | null
+          same_as_initial_contact?: boolean | null
           secondary_packaging?: string | null
           secondary_packaging_other?: string | null
           shipping_tbd?: boolean | null
           stage2_submission_id?: string | null
           status?: string
+          submitted_at?: string | null
           target_date?: string | null
+          technical_contact_email?: string | null
+          technical_contact_name?: string | null
+          technical_contact_phone?: string | null
           unit_dimension_h?: string | null
           unit_dimension_l?: string | null
           unit_dimension_unit?: string | null
@@ -1207,27 +1228,27 @@ export type Database = {
       stage2_prf_submissions: {
         Row: {
           company_stage: string | null
-          created_at: string | null
+          created_at: string
           data_json: Json | null
-          id: string | null
+          id: string
           lead_id: string | null
           status: string | null
           submitted_at: string | null
         }
         Insert: {
           company_stage?: string | null
-          created_at?: string | null
+          created_at?: string
           data_json?: Json | null
-          id?: string | null
+          id?: string
           lead_id?: string | null
           status?: string | null
           submitted_at?: string | null
         }
         Update: {
           company_stage?: string | null
-          created_at?: string | null
+          created_at?: string
           data_json?: Json | null
-          id?: string | null
+          id?: string
           lead_id?: string | null
           status?: string | null
           submitted_at?: string | null
@@ -1309,6 +1330,7 @@ export type Database = {
         Args: { _token: string; _user_id: string }
         Returns: undefined
       }
+      cleanup_old_stage2_drafts: { Args: never; Returns: undefined }
       delete_email: {
         Args: { msg_id: number; queue_name: string }
         Returns: boolean
