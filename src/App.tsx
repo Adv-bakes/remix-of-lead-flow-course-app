@@ -65,7 +65,7 @@ const App = () => (
         <Routes>
           {/* ========== PUBLIC / GATEWAY ========== */}
           <Route path="/apply" element={<GatewayEntry />} />
-          <Route path="/" element={<Navigate to="/brand" replace />} />
+          <Route path="/" element={<Navigate to="/team" replace />} />
           <Route path="/lead-qualifier" element={<LeadQualifier />} />
           <Route path="/stage2" element={<Stage2Wizard />} />
           <Route path="/nda-next" element={<NdaNext />} />
