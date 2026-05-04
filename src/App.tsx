@@ -64,7 +64,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* ========== PUBLIC / GATEWAY ========== */}
-          <Route path="/apply" element={<GatewayEntry />} />
+          <Route path="/apply" element={<Navigate to="/team" replace />} />
           <Route path="/" element={<Navigate to="/team" replace />} />
           <Route path="/lead-qualifier" element={<LeadQualifier />} />
           <Route path="/stage2" element={<Stage2Wizard />} />
