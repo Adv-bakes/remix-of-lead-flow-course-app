@@ -18,16 +18,36 @@ const ResetPassword = () => {
   const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    // Supabase recovery link sets a session via the URL hash automatically.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY" || session) {
         setSessionReady(true);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    (async () => {
+      try {
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
+        const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const tokenHash = url.searchParams.get("token_hash") || hash.get("token_hash");
+        const type = url.searchParams.get("type") || hash.get("type");
+        const accessToken = hash.get("access_token");
+        const refreshToken = hash.get("refresh_token");
+
+        if (code) {
+          await supabase.auth.exchangeCodeForSession(code);
+        } else if (tokenHash && type) {
+          await supabase.auth.verifyOtp({ token_hash: tokenHash, type: type as "recovery" });
+        } else if (accessToken && refreshToken) {
+          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        }
+      } catch (err) {
+        console.error("Recovery session error:", err);
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) setSessionReady(true);
-    });
+    })();
 
     return () => subscription.unsubscribe();
   }, []);
