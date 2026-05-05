@@ -15,6 +15,7 @@ import NdaNext from "./pages/NdaNext";
 import BrandAuth from "./pages/BrandAuth";
 import TeamAuth from "./pages/TeamAuth";
 import AcceptInvite from "./pages/AcceptInvite";
+import ResetPassword from "./pages/ResetPassword";
 import AccessPending from "./pages/AccessPending";
 import NotFound from "./pages/NotFound";
 
@@ -72,6 +73,7 @@ const App = () => (
           <Route path="/brand" element={<BrandAuth />} />
           <Route path="/team" element={<TeamAuth />} />
           <Route path="/accept-invite" element={<AcceptInvite />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/access-pending" element={<AccessPending />} />
           <Route path="/prf-startup" element={<PrfStartup />} />
           <Route path="/prf-established" element={<PrfEstablished />} />

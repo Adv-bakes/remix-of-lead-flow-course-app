@@ -65,7 +65,7 @@ const TeamAuth = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, { redirectTo: `${window.location.origin}/` });
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, { redirectTo: `${window.location.origin}/reset-password` });
       if (error) toast.error(error.message);
       else { toast.success("Password reset email sent!"); setShowResetModal(false); setResetEmail(""); }
     } catch { toast.error("An unexpected error occurred"); } finally { setIsLoading(false); }
