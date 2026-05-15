@@ -61,9 +61,15 @@ import OpsBatchTracker from "./pages/ops/BatchTracker";
 import OpsScoutBot from "./pages/ops/ScoutBot";
 import OpsVariance from "./pages/ops/VarianceReport";
 
-// New section skeletons (Phase 0)
+// Sales (Phase 1)
+import SalesPipeline from "./pages/sales/SalesPipeline";
+import SalesClients from "./pages/sales/SalesClients";
+import SalesClientFolder from "./pages/sales/SalesClientFolder";
+import SalesDocumentsInbox from "./pages/sales/SalesDocumentsInbox";
+import MyPrfs from "./pages/MyPrfs";
+
+// Other section skeletons (Phase 0)
 import {
-  SalesPipeline, SalesClients, SalesDocumentsInbox,
   OpsPipeline, OpsOrders, OpsSchedule,
   ComplianceSops, ComplianceTraceability, ComplianceCertifications,
   HrDirectory, HrTrainings, HrTraceability,
@@ -313,11 +319,37 @@ const App = () => (
             </ProtectedRoute>
           } />
 
-          {/* ========== NEW SECTION SKELETONS (Phase 0) ========== */}
+          {/* ========== SALES (Phase 1) ========== */}
+          <Route path="/team/sales/pipeline" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><SalesPipeline /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/sales/clients" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><SalesClients /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/sales/clients/:id" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><SalesClientFolder /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/sales/inbox" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><SalesDocumentsInbox /></TeamLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* Brand portal: client self-serve PRF list */}
+          <Route path="/my-prfs" element={
+            <ProtectedRoute allowedRoles={["user", "admin", "staff"]}>
+              <BrandLayout><MyPrfs /></BrandLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* ========== OTHER SECTION SKELETONS (Phase 0) ========== */}
           {[
-            ["/team/sales/pipeline", SalesPipeline],
-            ["/team/sales/clients", SalesClients],
-            ["/team/sales/inbox", SalesDocumentsInbox],
             ["/team/ops/pipeline", OpsPipeline],
             ["/team/ops/orders", OpsOrders],
             ["/team/ops/schedule", OpsSchedule],
