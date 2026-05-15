@@ -203,107 +203,107 @@ const App = () => (
 
           {/* ========== PORTAL 2: AB TEAM PORTAL ========== */}
           <Route path="/team/dashboard" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><AdminDashboard /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/admin" element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "owner"]}>
               <TeamLayout><AdminPortal /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/customers" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><AdminDashboard /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/client/new" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <AddClientFlow />
             </ProtectedRoute>
           } />
           <Route path="/team/client/:userId" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><ClientDetail /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/member/:userId" element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "owner"]}>
               <TeamLayout><TeamMemberDetail /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/product-request" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><ProductRequestForm /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/nda-submissions" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><NdaNext /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/spec-sheets" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><ProductSpecSheet /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/costing" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><Costing /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/formulas" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><Formulas /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/sourcing" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><Ingredients /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/production" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OperationsHub /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/reports" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><FounderDashboard /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/operations-hub" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OperationsHub /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/account" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><StaffAccount /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/settings" element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "owner"]}>
               <TeamLayout><AdminPortal /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/ops/inventory" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OpsInventory /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/ops/batches" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OpsBatchTracker /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/ops/scout-bot" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OpsScoutBot /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/ops/variance" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OpsVariance /></TeamLayout>
             </ProtectedRoute>
           } />
