@@ -1383,6 +1383,54 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_leads: {
+        Row: {
+          archived_at: string | null
+          archived_reason: string | null
+          company_name: string | null
+          contact_name: string | null
+          created_at: string
+          email: string
+          id: string
+          notes: string | null
+          phone: string | null
+          profile_id: string | null
+          stage: string
+          stage_updated_at: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          archived_reason?: string | null
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          stage?: string
+          stage_updated_at?: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          archived_reason?: string | null
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          stage?: string
+          stage_updated_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shelf_life: {
         Row: {
           aw_test_result: number | null

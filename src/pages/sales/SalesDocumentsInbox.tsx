@@ -1,83 +1,126 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TeamPage } from "@/components/team/TeamPage";
+import { PrfReviewPanel } from "@/components/sales/PrfReviewPanel";
+import { RejectEmailDialog } from "@/components/sales/RejectEmailDialog";
+import { Eye, Check, X } from "lucide-react";
 
-interface Item {
-  kind: "PRF" | "Document";
+interface PrfRow {
   id: string;
-  title: string;
-  subtitle: string;
+  product_name: string | null;
+  company_name: string | null;
+  founder_name: string | null;
+  email: string | null;
+  phone: string | null;
+  status: string;
   created_at: string;
-  client_id?: string | null;
 }
 
 const SalesDocumentsInbox = () => {
-  const [items, setItems] = useState<Item[]>([]);
+  const [rows, setRows] = useState<PrfRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState<PrfRow | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      const [prfRes, docRes] = await Promise.all([
-        supabase.from("prf_submissions")
-          .select("id, product_name, company_name, email, status, created_at, owner_user_id")
-          .eq("status", "new").order("created_at", { ascending: false }).limit(50),
-        supabase.from("client_documents")
-          .select("id, file_name, document_type, user_id, uploaded_at")
-          .order("uploaded_at", { ascending: false }).limit(50),
-      ]);
-      if (prfRes.error) toast.error(prfRes.error.message);
-      const out: Item[] = [];
-      (prfRes.data || []).forEach((p: any) => out.push({
-        kind: "PRF", id: p.id,
-        title: p.product_name || "(unnamed PRF)",
-        subtitle: `${p.company_name || p.email || "Unknown"} · ${p.status}`,
-        created_at: p.created_at, client_id: p.owner_user_id,
-      }));
-      (docRes.data || []).forEach((d: any) => out.push({
-        kind: "Document", id: d.id,
-        title: d.file_name || d.document_type,
-        subtitle: d.document_type || "—",
-        created_at: d.uploaded_at, client_id: d.user_id,
-      }));
-      out.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
-      setItems(out);
-      setLoading(false);
-    })();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("prf_submissions")
+      .select("id, product_name, company_name, founder_name, email, phone, status, created_at")
+      .in("status", ["new", "reviewing"])
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setRows((data || []) as any);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const accept = async (row: PrfRow) => {
+    const { error } = await supabase
+      .from("prf_submissions")
+      .update({ status: "accepted" })
+      .eq("id", row.id);
+    if (error) return toast.error(error.message);
+
+    if (row.email) {
+      await (supabase as any)
+        .from("sales_leads")
+        .update({ stage: "Send Documents", stage_updated_at: new Date().toISOString() })
+        .eq("email", row.email.toLowerCase());
+    }
+    toast.success("Accepted — moved to Send Documents");
+    setRows((r) => r.filter((x) => x.id !== row.id));
+  };
 
   return (
     <TeamPage
       eyebrow="Sales"
       title="Documents Inbox"
-      description="Every new PRF and client upload, in one stream."
+      description="Review each PRF, then Accept (advance to Send Documents) or Reject (archive with email)."
     >
       <div className="tp-surface divide-y divide-[hsl(var(--tp-hairline))]">
         {loading && <p className="p-8 text-sm text-[hsl(var(--tp-text-dim))]">Loading…</p>}
-        {!loading && items.length === 0 && (
-          <p className="p-8 text-sm text-[hsl(var(--tp-text-dim))] italic">Nothing new in the inbox.</p>
+        {!loading && rows.length === 0 && (
+          <p className="p-10 text-center text-sm text-[hsl(var(--tp-text-dim))] italic">
+            Inbox zero. Nothing to review.
+          </p>
         )}
-        {items.map((i) => (
-          <div key={`${i.kind}-${i.id}`} className="p-5 flex items-start justify-between gap-4 hover:bg-white/[0.02] transition">
-            <div className="min-w-0">
+        {rows.map((r) => (
+          <div key={r.id} className="p-5 flex items-start justify-between gap-4 hover:bg-white/[0.02] transition">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className="tp-chip text-[10px] uppercase tracking-wider">{i.kind}</span>
-                <p className="font-display text-sm font-semibold text-[hsl(var(--tp-text))] truncate">{i.title}</p>
+                <span className="tp-chip text-[10px] uppercase tracking-wider">PRF</span>
+                {r.status === "reviewing" && (
+                  <span className="tp-chip text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))]">
+                    Reviewing
+                  </span>
+                )}
+                <p className="font-display text-sm font-semibold text-[hsl(var(--tp-text))] truncate">
+                  {r.company_name || r.product_name || "(unnamed)"}
+                </p>
               </div>
-              <p className="text-xs text-[hsl(var(--tp-text-muted))]">{i.subtitle}</p>
+              <p className="text-xs text-[hsl(var(--tp-text-muted))]">
+                {[r.founder_name, r.email, r.phone].filter(Boolean).join(" · ")}
+              </p>
+              <p className="text-[11px] mt-1 text-[hsl(var(--tp-text-dim))]">
+                Received {new Date(r.created_at).toLocaleString()}
+              </p>
             </div>
-            <div className="text-right text-xs text-[hsl(var(--tp-text-dim))] shrink-0">
-              <p>{new Date(i.created_at).toLocaleString()}</p>
-              {i.client_id && (
-                <Link to={`/team/sales/clients/${i.client_id}`} className="text-[hsl(var(--tp-gold-soft))] hover:underline">
-                  Open client →
-                </Link>
-              )}
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={() => setOpenId(r.id)} className="tp-btn">
+                <Eye className="w-3.5 h-3.5" /> Open PRF
+              </button>
+              <button onClick={() => accept(r)} className="tp-btn tp-btn-primary">
+                <Check className="w-3.5 h-3.5" /> Accept
+              </button>
+              <button
+                onClick={() => setRejecting(r)}
+                disabled={!r.email}
+                className="tp-btn disabled:opacity-40"
+                title={!r.email ? "No email on file — cannot send rejection" : "Reject and email"}
+              >
+                <X className="w-3.5 h-3.5" /> Reject
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      <PrfReviewPanel prfId={openId} onClose={() => { setOpenId(null); load(); }} />
+      {rejecting && (
+        <RejectEmailDialog
+          open={!!rejecting}
+          onClose={() => setRejecting(null)}
+          onConfirmed={() => { setRejecting(null); load(); }}
+          prfId={rejecting.id}
+          to={rejecting.email!}
+          contactName={rejecting.founder_name}
+          companyName={rejecting.company_name}
+          productName={rejecting.product_name}
+        />
+      )}
     </TeamPage>
   );
 };

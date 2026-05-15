@@ -66,6 +66,7 @@ import SalesPipeline from "./pages/sales/SalesPipeline";
 import SalesClients from "./pages/sales/SalesClients";
 import SalesClientFolder from "./pages/sales/SalesClientFolder";
 import SalesDocumentsInbox from "./pages/sales/SalesDocumentsInbox";
+import SalesArchive from "./pages/sales/SalesArchive";
 import MyPrfs from "./pages/MyPrfs";
 
 // Other section skeletons (Phase 0)
@@ -338,6 +339,11 @@ const App = () => (
           <Route path="/team/sales/inbox" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><SalesDocumentsInbox /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/sales/archive" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><SalesArchive /></TeamLayout>
             </ProtectedRoute>
           } />
 

@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
-import { MoneyOnly } from "@/components/MoneyOnly";
 
 export interface PipelineCardData {
   id: string;
-  full_name: string | null;
-  business_name: string | null;
-  email: string | null;
-  sales_stage: string | null;
-  sales_stage_updated_at: string | null;
+  email: string;
+  contact_name: string | null;
+  company_name: string | null;
+  stage: string | null;
+  stage_updated_at: string | null;
   has_nda?: boolean;
   has_pss?: boolean;
   has_prf?: boolean;
@@ -26,7 +25,7 @@ interface Props {
 }
 
 export const PipelineCard = ({ client, isDragging, onDragStart, onDragEnd }: Props) => {
-  const days = daysSince(client.sales_stage_updated_at);
+  const days = daysSince(client.stage_updated_at);
   const stale = days >= 7;
   return (
     <div
@@ -41,11 +40,11 @@ export const PipelineCard = ({ client, isDragging, onDragStart, onDragEnd }: Pro
     >
       <Link to={`/team/sales/clients/${client.id}`} className="block">
         <p className="font-display text-[14px] font-semibold leading-tight text-[hsl(var(--tp-text))] truncate">
-          {client.business_name || client.full_name || "—"}
+          {client.company_name || client.contact_name || client.email}
         </p>
-        {client.business_name && client.full_name && (
+        {client.contact_name && (
           <p className="text-[11px] mt-0.5 text-[hsl(var(--tp-text-muted))] truncate">
-            {client.full_name}
+            {client.contact_name}
           </p>
         )}
 
@@ -64,9 +63,6 @@ export const PipelineCard = ({ client, isDragging, onDragStart, onDragEnd }: Pro
           >
             {days}d in stage{stale ? " • stale" : ""}
           </span>
-          <MoneyOnly>
-            <span className="text-[11px] font-medium text-[hsl(var(--tp-gold-soft))]">$—</span>
-          </MoneyOnly>
         </div>
       </Link>
     </div>

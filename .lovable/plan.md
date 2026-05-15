@@ -1,79 +1,141 @@
-## What we're fixing
+## Sales workflow — what we're actually building
 
-The Team Portal works under the hood (drag-drop Kanban, RLS, routes) but looks like a 2014 admin template: 5 flat rectangles, default fonts, brown sidebar, one lonely card. We're not rebuilding — we're replacing the visual layer with a real design system and a smarter information architecture.
+A clean, decision-driven sales surface. PRFs land → salesperson reviews → Accept or Reject → client either becomes a folder you live inside, or gets archived with a polite AI-drafted email. No fake dollar signs anywhere.
 
-No database changes. No route changes. No business-logic changes.
-
-## Design system (locked)
-
-- **Palette:** Noir & Gold
-  - `--bg` `#0a0a0a` · `--surface` `#141414` · `--surface-2` `#1c1c1c` · `--border` `rgba(201,168,76,0.12)`
-  - `--text` `#f5f1e6` · `--text-muted` `rgba(245,241,230,0.55)`
-  - `--gold` `#c9a84c` · `--gold-soft` `#f0d78c` · `--gold-glow` `rgba(201,168,76,0.18)`
-- **Typography:** Sora (display, 600/700, tight tracking) · Manrope (body, 400/500)
-- **Radius:** 14px cards, 10px inputs, 999px chips
-- **Shadow:** soft inner highlight + low ambient — no harsh drop shadows
-- **Motion:** Framer Motion, 180–220ms ease-out on mount; cards lift 2px on hover; column drop zones glow gold
-
-## Sales Pipeline — bento layout
+## Core mental model
 
 ```text
-┌────────────────────────────────────────────────────────────────┐
-│  PIPELINE                              [search] [filter] [+ ]  │
-│  Sora 32, gold underline accent                                │
-├────────────────────────────────────────────────────────────────┤
-│ ┌─KPI─┐ ┌─KPI─┐ ┌─KPI─┐ ┌──────── Velocity ────────┐           │
-│ │ 12  │ │  3  │ │ $—  │ │  sparkline, 30d           │           │
-│ │Open │ │Stuck│ │MoneyOnly│                         │           │
-│ └─────┘ └─────┘ └─────┘ └───────────────────────────┘           │
-├────────────────────────────────────────────────────────────────┤
-│  Lead In · 1     Send Docs · 0   Follow-Up · 0   Quote · 0  …  │
-│  ┌──────────┐    ┌─ empty ─┐     ┌─ empty ─┐    ┌─ empty ─┐    │
-│  │ Acme Co. │    │ "drop   │     │         │    │         │    │
-│  │ Jane Doe │    │  here"  │     │         │    │         │    │
-│  │ ●NDA ○PSS│    └─────────┘     └─────────┘    └─────────┘    │
-│  │ 3d · $—  │                                                  │
-│  └──────────┘                                                   │
-└────────────────────────────────────────────────────────────────┘
+PRF submitted (public form)
+      │
+      ▼
+┌───────────────┐    Accept     ┌────────────────────────┐
+│ Documents     │ ───────────▶ │ Client Folder (micro app)│
+│ Inbox (queue) │               │ → stage: Send Documents │
+│  - Open PRF   │   Reject      └────────────────────────┘
+│  - Read it    │ ──────────┐
+│  - Decide     │           ▼
+└───────────────┘   ┌──────────────────┐
+                    │ Reject email      │  → Archive
+                    │  (talk-to-text +  │
+                    │   AI polish)      │
+                    └──────────────────┘
 ```
 
-### Card upgrade
-Each pipeline card shows: company (Sora 14/600), contact (Manrope 12), three doc dots (NDA/PSS/PRF — gold filled = signed/received, hollow = pending), days-in-stage chip, MoneyOnly $ chip. Hover lifts the card and reveals quick actions (Open · Send NDA · Advance →).
+Key rules from your direction:
+- A submitted PRF **automatically creates a client card** (no manual data entry). The card pulls from the PRF.
+- **Pipeline has no $ values** — they mean nothing until first order. Replace dollar KPI with stage-count chips.
+- **Accept advances to "Send Documents"**, not "Quote". You need the PSS back before you can quote.
+- **Reject** archives the client + sends an AI-drafted email composed via talk-to-text by the salesperson.
+- Inbox items only leave the inbox when a decision is made. Opening the PRF without deciding keeps it in the queue.
+- Contact data (name, email, phone) is never deleted — archived clients keep their record, just hidden from active views.
 
-### Column upgrade
-Column headers get a thin gold rule under them, count chip, and a "+" to add a client straight into that stage. Drop zones glow gold during drag. Empty columns show a one-line italic hint, not the current bracketed placeholder.
+## Changes
 
-### KPI strip (top)
-4 bento tiles: Open deals · Stuck (>7d in stage) · Pipeline value (MoneyOnly) · 30-day velocity sparkline. Tiles are different sizes — that's the bento.
+### 1. Auto-create client card on PRF submission
 
-## Apply the same system everywhere
+Add a database trigger on `prf_submissions` (after insert):
+- If `email` is set and no `profiles` row exists for that email with role `Client`, create one.
+- Copy: `company_name → business_name`, `founder_name → full_name`, `email`, `phone`.
+- Set `sales_stage = 'Lead In'`.
+- Link the PRF to the new profile via `prf_submissions.owner_user_id` (already exists; trigger fills it when the email matches a future signup, but we also fill it at insert time when we create the profile).
 
-Same tokens, same type, same card grammar across the rest of `/team/*`:
-- **TeamLayout sidebar** — black surface, gold hairline border, Sora section labels, active item gets a 2px gold left rail (no more brown gradient).
-- **Dashboard, Clients, Documents Inbox, Ops pages, Inventory, Scout Bot, etc.** — header pattern, KPI bento, table/card style all unified.
-- Replace ad-hoc inline `style={{ background: "rgba(...)" }}` with semantic Tailwind tokens defined in `index.css` + `tailwind.config.ts`.
+This means: every PRF that lands shows up as a card in the **Lead In** column automatically, with its NDA/PSS/PRF dots reflecting reality.
 
-## Technical changes (where the code actually changes)
+### 2. Documents Inbox — true triage queue
 
-- `src/index.css` — add the Noir & Gold HSL tokens, Sora/Manrope font families, gold-glow shadow utility, gradient definitions.
-- `tailwind.config.ts` — register the new semantic colors so we use `bg-surface`, `text-gold`, `border-hairline` instead of inline styles.
-- `index.html` — `<link>` Sora + Manrope from Google Fonts.
-- `src/components/TeamLayout.tsx` — restyle sidebar to noir surface + gold accents; move to semantic tokens.
-- `src/pages/sales/SalesPipeline.tsx` — bento KPI strip + redesigned column/card components.
-- New `src/components/sales/PipelineCard.tsx` and `PipelineColumn.tsx` so cards are reusable and testable.
-- `src/pages/sales/SalesClients.tsx`, `SalesClientFolder.tsx`, `SalesDocumentsInbox.tsx` — restyle with the same primitives (no logic changes).
-- Add `framer-motion` micro-interactions (mount fade-in, hover lift, drop-zone glow).
+**What appears:**
+- Only PRFs with `status = 'new'` or `status = 'reviewing'`. Once accepted or rejected, they leave.
 
-## Order of work
+**Per row:**
+- Company · contact · received-at · "Open PRF" button (opens the PRF detail in a side panel — read-only, with download).
+- Two decision buttons: **Accept** · **Reject**.
+- A salesperson can open the PRF, close it, come back later — status stays `new`/`reviewing` until they click Accept or Reject.
 
-1. Tokens + fonts + Tailwind config (foundation — every page benefits)
-2. TeamLayout sidebar restyle
-3. Sales Pipeline bento + PipelineCard/PipelineColumn
-4. Sales Clients + Client Folder + Documents Inbox restyle
-5. Roll the same primitives across Ops/Compliance/HR pages
+**Accept flow:**
+- Set PRF `status = 'accepted'`.
+- Move the linked client to **Send Documents** stage.
+- Log to `client_activity` (`prf_accepted`).
+- Toast: "Accepted — moved to Send Documents". Row disappears from inbox.
 
-## Out of scope
+**Reject flow → talk-to-text + AI email composer:**
+- Open a small dialog with:
+  - Mic button (Web Speech API → live transcript) for the salesperson to dictate the gist of why.
+  - Text area showing the transcript (editable).
+  - **"Polish with AI"** button → calls a new edge function that uses Lovable AI Gateway (`google/gemini-2.5-flash`) to turn the dictated note into a short, professional, kind rejection email.
+  - Preview of the rendered email.
+  - **Send & Archive** button.
+- On send: edge function sends the email via existing transactional email infra (we already have `notify.adventurebakery.info` via Resend), sets PRF `status = 'rejected'`, sets profile `sales_stage = 'Archived'`, logs to `client_activity` (`prf_rejected_emailed`).
+- Row disappears from inbox; client moves to Archive view (not deleted).
 
-- No new features, no DB changes, no route changes
-- Brand portal styling stays as-is for now (different audience)
-- No demo seed data — empty columns will look intentional, not broken, with the new empty-state styling
+**Empty state:** "Inbox zero. Nothing to review."
+
+### 3. Pipeline — drop the dollar sign, fix the KPIs
+
+KPIs that actually mean something at this stage of a relationship:
+- **Open deals** (count of non-archived clients)
+- **Stuck >7d** (no stage change in a week)
+- **Awaiting docs** (in Send Documents stage)
+- **PRFs to review** (inbox count)
+
+No `MoneyOnly` `$—` tile. No "pipeline value". We can revisit dollar metrics after first orders exist (then it's real revenue, not guessed deal value).
+
+Above the kanban: a 5-chip strip (`Lead In · Send Documents · Follow-Up · Quote · First Order`) with live counts so the eye sees "here are the 5 stages" before scanning columns.
+
+### 4. Client Folder — micro app per client
+
+`/team/sales/clients/:id` becomes the place a salesperson actually lives. It already exists as a route — we'll redesign the content:
+
+- **Header**: company, contact, email, phone, current stage (with stage stepper).
+- **Tabs**:
+  - **Overview** — contact card, key project info pulled from latest PRF, recent activity timeline.
+  - **PRFs** — list of every PRF this client has submitted (a client can have multiple projects). Each row: product name, submitted date, status, Open + Download buttons.
+  - **Documents** — NDA, PSS, batch sheets — upload/view (uses existing `client_documents`).
+  - **Activity** — full `client_activity` log.
+  - **Notes** — free-text notes the salesperson can keep.
+
+Out of scope for this pass: the deeper "what info to show on Overview" — that's the next conversation you flagged.
+
+### 5. Archive view
+
+New route `/team/sales/archive`:
+- All profiles with `sales_stage = 'Archived'`.
+- Shows: company, contact, email, phone, archived date, reason snippet, "Restore" action.
+- Restore = move back to **Lead In**.
+- Cleanup cadence is manual for now (no auto-purge); we can add a "delete forever" button later.
+
+### 6. Sidebar tweaks (TeamLayout)
+
+- Add **Archive** under Sales.
+- Add a small badge on **Documents Inbox** with count of `status='new'/'reviewing'` PRFs.
+- Add a small badge on Pipeline showing total open deals (optional — say the word).
+
+## Files touched
+
+- `src/pages/sales/SalesPipeline.tsx` — drop $ KPI, add stage-chip strip, update KPIs
+- `src/pages/sales/SalesDocumentsInbox.tsx` — filter to undecided PRFs, Open/Accept/Reject actions
+- `src/pages/sales/SalesClientFolder.tsx` — tabbed micro-app layout
+- `src/pages/sales/SalesArchive.tsx` — **new** archive view
+- `src/components/sales/PrfReviewPanel.tsx` — **new** side panel: read PRF, download, decide
+- `src/components/sales/RejectEmailDialog.tsx` — **new** talk-to-text + AI polish + send
+- `src/components/TeamLayout.tsx` — add Archive nav item, inbox count badge
+- `src/components/sales/PipelineCard.tsx` — minor: remove `$—` chip
+- `supabase/functions/draft-rejection-email/index.ts` — **new** edge function (Lovable AI Gateway → polish dictated note)
+- `supabase/functions/send-rejection-email/index.ts` — **new** edge function (renders + sends via existing transactional infra)
+- `src/App.tsx` — register `/team/sales/archive` route
+
+## Database changes
+
+One migration:
+1. **Trigger `prf_create_client_profile`** on `prf_submissions` after insert: upsert a `profiles` row with role `Client` for the submitter's email, copy contact fields, set `sales_stage='Lead In'`, link `owner_user_id` if a profile already exists for that email.
+2. **Add `'reviewing'`, `'accepted'`, `'rejected'`** as accepted values in `prf_submissions.status` (it's already free text — no constraint change needed; just documenting).
+3. **Add `'Archived'`** as a valid `sales_stage` value (also free text — no constraint).
+4. **Index** on `prf_submissions(status, created_at)` for inbox query speed.
+
+No schema-breaking changes. Existing PRFs stay where they are; the trigger only fires for new inserts. We'll backfill the 6 existing `status='new'` PRFs as a one-time data step (insert tool, not migration).
+
+## Out of scope (for the next pass)
+
+- The exact information architecture of the Client Folder Overview tab — you flagged this as its own conversation.
+- Auto-purge schedule for archived clients.
+- Dollar-based metrics — revisit once first orders flow through.
+- Voice transcription accuracy guarantees — using browser Web Speech API; works in Chrome/Edge, falls back to plain typing in Safari.
