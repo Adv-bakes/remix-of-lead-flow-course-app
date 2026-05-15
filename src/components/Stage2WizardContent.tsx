@@ -635,7 +635,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
     });
     const submitOk = !error && ok;
 
-    if (error) {
+    if (!submitOk) {
       console.error("[PRF] stage2 submit update failed", {
         submissionId,
         payload: stage2SubmitPayload,
@@ -644,7 +644,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       setIsSubmitting(false);
       toast({
         title: "Submission failed",
-        description: error.message,
+        description: error?.message || "Could not submit draft (token mismatch or already submitted).",
         variant: "destructive",
       });
       return;
