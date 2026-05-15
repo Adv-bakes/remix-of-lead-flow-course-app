@@ -744,6 +744,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
     }
 
     localStorage.removeItem("stage2SubmissionId");
+    localStorage.removeItem("stage2DraftToken");
     setIsSubmitted(true);
     toast({
       title: "PRF Submitted Successfully",
