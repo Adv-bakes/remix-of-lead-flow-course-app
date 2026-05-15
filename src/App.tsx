@@ -55,6 +55,12 @@ import OperationsHub from "./pages/OperationsHub";
 import FounderDashboard from "./pages/FounderDashboard";
 import StaffAccount from "./pages/StaffAccount";
 
+// Operations System
+import OpsInventory from "./pages/ops/Inventory";
+import OpsBatchTracker from "./pages/ops/BatchTracker";
+import OpsScoutBot from "./pages/ops/ScoutBot";
+import OpsVariance from "./pages/ops/VarianceReport";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -270,6 +276,26 @@ const App = () => (
           <Route path="/team/settings" element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <TeamLayout><AdminPortal /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/ops/inventory" element={
+            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+              <TeamLayout><OpsInventory /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/ops/batches" element={
+            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+              <TeamLayout><OpsBatchTracker /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/ops/scout-bot" element={
+            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+              <TeamLayout><OpsScoutBot /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/ops/variance" element={
+            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+              <TeamLayout><OpsVariance /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/founder" element={

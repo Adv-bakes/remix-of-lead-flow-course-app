@@ -599,6 +599,96 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_jit: {
+        Row: {
+          cases_on_hand: number
+          created_at: string
+          created_by: string | null
+          id: string
+          ingredient_name: string
+          lbs_per_case: number
+          reorder_point: number | null
+          supplier: string | null
+          total_lbs: number | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          cases_on_hand?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ingredient_name: string
+          lbs_per_case?: number
+          reorder_point?: number | null
+          supplier?: string | null
+          total_lbs?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          cases_on_hand?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ingredient_name?: string
+          lbs_per_case?: number
+          reorder_point?: number | null
+          supplier?: string | null
+          total_lbs?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory_tolling: {
+        Row: {
+          client_id: string | null
+          client_name: string | null
+          created_at: string
+          created_by: string | null
+          expiry_date: string | null
+          id: string
+          ingredient_name: string
+          lot_code: string | null
+          notes: string | null
+          qty_on_hand: number
+          received_date: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string
+          ingredient_name: string
+          lot_code?: string | null
+          notes?: string | null
+          qty_on_hand?: number
+          received_date?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string
+          ingredient_name?: string
+          lot_code?: string | null
+          notes?: string | null
+          qty_on_hand?: number
+          received_date?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       packaging: {
         Row: {
           compliance_notes: string | null
@@ -875,6 +965,98 @@ export type Database = {
           shelf_life_requirements?: string | null
           status?: string | null
           units_per_pack?: string | null
+        }
+        Relationships: []
+      }
+      production_batch_ingredients: {
+        Row: {
+          batch_id: string
+          created_at: string
+          deducted: boolean
+          id: string
+          ingredient_name: string
+          lot_code_used: string | null
+          qty_actual_lbs: number
+          qty_planned_lbs: number
+          type: string
+          variance_lbs: number | null
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          deducted?: boolean
+          id?: string
+          ingredient_name: string
+          lot_code_used?: string | null
+          qty_actual_lbs?: number
+          qty_planned_lbs?: number
+          type: string
+          variance_lbs?: number | null
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          deducted?: boolean
+          id?: string
+          ingredient_name?: string
+          lot_code_used?: string | null
+          qty_actual_lbs?: number
+          qty_planned_lbs?: number
+          type?: string
+          variance_lbs?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_batch_ingredients_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "production_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_batches: {
+        Row: {
+          batch_date: string
+          client_name: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          lot_code: string
+          notes: string | null
+          product_name: string
+          status: string
+          target_batch_size_lbs: number
+          updated_at: string
+        }
+        Insert: {
+          batch_date?: string
+          client_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lot_code: string
+          notes?: string | null
+          product_name: string
+          status?: string
+          target_batch_size_lbs: number
+          updated_at?: string
+        }
+        Update: {
+          batch_date?: string
+          client_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lot_code?: string
+          notes?: string | null
+          product_name?: string
+          status?: string
+          target_batch_size_lbs?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1331,6 +1513,7 @@ export type Database = {
         Returns: undefined
       }
       cleanup_old_stage2_drafts: { Args: never; Returns: undefined }
+      complete_batch: { Args: { _batch_id: string }; Returns: undefined }
       delete_email: {
         Args: { msg_id: number; queue_name: string }
         Returns: boolean

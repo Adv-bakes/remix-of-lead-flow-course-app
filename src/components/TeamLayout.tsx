@@ -16,6 +16,10 @@ import {
   Package,
   Factory,
   BarChart3,
+  Boxes,
+  ListChecks,
+  Bot,
+  TrendingUp,
   User as UserIcon,
   Settings,
   LogOut,
@@ -72,6 +76,15 @@ const navSections: NavSection[] = [
       { path: "/team/sourcing", icon: Package, label: "Sourcing" },
       { path: "/team/production", icon: Factory, label: "Production Orders" },
       { path: "/team/reports", icon: BarChart3, label: "Reports" },
+    ],
+  },
+  {
+    title: "Operations System",
+    items: [
+      { path: "/team/ops/inventory", icon: Boxes, label: "Inventory" },
+      { path: "/team/ops/batches", icon: ListChecks, label: "Batch Tracker" },
+      { path: "/team/ops/scout-bot", icon: Bot, label: "Scout Bot" },
+      { path: "/team/ops/variance", icon: TrendingUp, label: "Variance Report" },
     ],
   },
   {
