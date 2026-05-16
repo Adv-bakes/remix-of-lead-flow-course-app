@@ -62,19 +62,48 @@ const SalesDocumentsInbox = () => {
   useEffect(() => { load(); }, []);
 
   const accept = async (row: PrfRow) => {
-    const { error } = await supabase
+    // Resolve / create sales_lead so the dashboard card is clickable.
+    let leadId: string | null = null;
+    if (row.email) {
+      const emailLc = row.email.toLowerCase();
+      const { data: existing } = await (supabase as any)
+        .from("sales_leads")
+        .select("id")
+        .eq("email", emailLc)
+        .maybeSingle();
+      if (existing?.id) {
+        leadId = existing.id;
+      } else {
+        const { data: created, error: createErr } = await (supabase as any)
+          .from("sales_leads")
+          .insert({
+            email: emailLc,
+            contact_name: row.founder_name,
+            company_name: row.company_name,
+            stage: "Send Documents",
+            stage_updated_at: new Date().toISOString(),
+          })
+          .select("id")
+          .maybeSingle();
+        if (createErr) return toast.error(createErr.message);
+        leadId = created?.id ?? null;
+      }
+    }
+
+    const { error } = await (supabase as any)
       .from("prf_submissions")
-      .update({ status: "accepted" })
+      .update({
+        status: "accepted",
+        sales_stage: "Send Documents",
+        sales_stage_updated_at: new Date().toISOString(),
+        ...(leadId ? { lead_id: leadId } : {}),
+      })
       .eq("id", row.id);
     if (error) return toast.error(error.message);
 
-    // Find the lead and auto-send NDA + PSS magic link.
-    if (row.email) {
-      const { data: lead } = await (supabase as any)
-        .from("sales_leads")
-        .select("id")
-        .eq("email", row.email.toLowerCase())
-        .maybeSingle();
+    // Auto-send NDA + PSS magic link if we have a lead.
+    if (row.email && leadId) {
+      const lead = { id: leadId } as { id: string };
       if (lead?.id) {
         const { data: sendRes, error: sendErr } = await supabase.functions.invoke("send-client-documents", {
           body: { leadId: lead.id },
