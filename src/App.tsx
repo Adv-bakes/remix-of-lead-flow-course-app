@@ -320,6 +320,16 @@ const App = () => (
               <TeamLayout><OpsVariance /></TeamLayout>
             </ProtectedRoute>
           } />
+          <Route path="/team/operations/batch-sheets" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><BatchSheets /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/operations/batch-sheets/:id" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><BatchSheetEditor /></TeamLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/team/founder" element={
             <ProtectedRoute allowedRoles={["admin", "owner"]}>
               <TeamLayout><FounderDashboard /></TeamLayout>
