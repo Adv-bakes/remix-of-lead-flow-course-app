@@ -21,10 +21,8 @@ interface NavSection { title: string; items: NavItem[]; }
 const navSections: NavSection[] = [
   { title: "Home", items: [{ path: "/team/dashboard", icon: Home, label: "Dashboard" }] },
   { title: "Sales", items: [
-    { path: "/team/sales/pipeline", icon: Kanban, label: "Pipeline" },
-    { path: "/team/sales/clients", icon: Users, label: "Clients" },
+    { path: "/team/sales/dashboard", icon: Home, label: "Dashboard" },
     { path: "/team/sales/inbox", icon: FileText, label: "Documents Inbox" },
-    { path: "/team/sales/templates", icon: FileText, label: "Templates" },
     { path: "/team/sales/archive", icon: Archive, label: "Archive" },
   ]},
   { title: "Operations", items: [
