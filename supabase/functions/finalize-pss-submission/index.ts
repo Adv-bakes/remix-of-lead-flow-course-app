@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       file_path: filePath,
       uploaded_at: new Date().toISOString(),
       uploaded_by: row.prospect_email,
-      review_status: "ai_passed",
+      review_status: "auto_approved",
       review_notes: {
         source: "pss_wizard",
         pss_submission_id: row.id,
