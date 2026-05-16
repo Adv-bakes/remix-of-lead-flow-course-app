@@ -339,6 +339,11 @@ const App = () => (
           } />
 
           {/* ========== SALES (Phase 1) ========== */}
+          <Route path="/team/sales/dashboard" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><SalesDashboard /></TeamLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/team/sales/pipeline" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><SalesPipeline /></TeamLayout>
@@ -357,6 +362,11 @@ const App = () => (
           <Route path="/team/sales/clients/:leadId/projects/:prfId" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><SalesProjectWorkspace /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/sales/clients/:leadId/products/:productId" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><SalesProductWorkspace /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/sales/inbox" element={
