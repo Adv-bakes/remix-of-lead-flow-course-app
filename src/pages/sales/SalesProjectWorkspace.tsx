@@ -18,6 +18,7 @@ const SalesProjectWorkspace = () => {
   const [batchSheet, setBatchSheet] = useState<any>(null);
   const [openPrf, setOpenPrf] = useState(false);
   const [batchOpen, setBatchOpen] = useState(false);
+  const [generatingBatch, setGeneratingBatch] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,6 +67,24 @@ const SalesProjectWorkspace = () => {
     window.open(data.signedUrl, "_blank");
   };
 
+  const generateBatchSheet = async () => {
+    if (!pss?.id) return toast.error("No PSS on file");
+    setGeneratingBatch(true);
+    const { data, error } = await supabase.functions.invoke("generate-batch-sheet-from-pss", {
+      body: { pss_document_id: pss.id },
+    });
+    setGeneratingBatch(false);
+    if (error) return toast.error(error.message || "Failed to generate batch sheet");
+    toast.success("Batch sheet generated");
+    const { data: bs } = await (supabase as any)
+      .from("batch_sheets")
+      .select("*")
+      .eq("pss_document_id", pss.id)
+      .maybeSingle();
+    setBatchSheet(bs || null);
+    setBatchOpen(true);
+  };
+
   if (loading) return <TeamPage title="Loading…">…</TeamPage>;
   if (!prf || !lead) return (
     <TeamPage title="Not found">
@@ -94,11 +113,23 @@ const SalesProjectWorkspace = () => {
         <button onClick={() => openSigned(nda)} disabled={!nda?.file_path} className="tp-btn disabled:opacity-40" title={!nda ? "No NDA on file" : "Open NDA"}>
           <FileSignature className="w-3.5 h-3.5" /> NDA {nda && nda.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{nda.review_status}</span>}
         </button>
-        <button onClick={() => setBatchOpen(true)} disabled={!batchSheet} className="tp-btn disabled:opacity-40 border-[hsl(var(--tp-gold))]/40" title={!batchSheet ? "Batch sheet generates from approved PSS" : "Open internal batch sheet"}>
-          <FlaskConical className="w-3.5 h-3.5 text-[hsl(var(--tp-gold))]" />
-          <span className="text-[hsl(var(--tp-gold))]">Batch Sheet</span>
-          <span className="text-[9px] text-[hsl(var(--tp-text-dim))]">internal</span>
-        </button>
+        {batchSheet ? (
+          <button onClick={() => setBatchOpen(true)} className="tp-btn border-[hsl(var(--tp-gold))]/40" title="Open internal batch sheet">
+            <FlaskConical className="w-3.5 h-3.5 text-[hsl(var(--tp-gold))]" />
+            <span className="text-[hsl(var(--tp-gold))]">Batch Sheet</span>
+            <span className="text-[9px] text-[hsl(var(--tp-text-dim))]">internal</span>
+          </button>
+        ) : (
+          <button
+            onClick={generateBatchSheet}
+            disabled={!pss?.id || pss?.review_status !== "approved" || generatingBatch}
+            className="tp-btn disabled:opacity-40 border-[hsl(var(--tp-gold))]/40"
+            title={!pss ? "No PSS on file" : pss.review_status !== "approved" ? "Approve the PSS in Documents Inbox first" : "Generate batch sheet from approved PSS"}
+          >
+            <FlaskConical className="w-3.5 h-3.5 text-[hsl(var(--tp-gold))]" />
+            <span className="text-[hsl(var(--tp-gold))]">{generatingBatch ? "Generating…" : "Generate Batch Sheet"}</span>
+          </button>
+        )}
         <button
           onClick={() => toast.info("Send-to-client emails are coming in the next pass.")}
           className="tp-btn ml-auto"

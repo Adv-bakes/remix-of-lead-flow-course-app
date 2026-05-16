@@ -123,23 +123,33 @@ const SalesDashboard = () => {
                   <span className="text-[10px] text-[hsl(var(--tp-text-dim))]">{cards.length}</span>
                 </div>
                 <div className="space-y-2">
-                  {cards.map(p => (
-                    <div
-                      key={p.id}
-                      draggable
-                      onDragStart={() => setDragging(p.id)}
-                      onDragEnd={() => setDragging(null)}
-                      className="tp-surface p-3 cursor-grab active:cursor-grabbing hover:opacity-90"
-                    >
-                      <Link to={p.lead_id ? `/team/sales/clients/${p.lead_id}/projects/${p.id}` : `#`}>
+                  {cards.map(p => {
+                    const inner = (
+                      <>
                         <p className="font-display text-sm text-[hsl(var(--tp-text))] truncate">{p.product_name || "(unnamed)"}</p>
                         <p className="text-[10px] text-[hsl(var(--tp-text-dim))] truncate">{p.company_name || p.email}</p>
                         <p className="text-[10px] text-[hsl(var(--tp-text-dim))] mt-1">
                           {daysSince(p.sales_stage_updated_at)}d in stage
+                          {!p.lead_id && <span className="ml-1 text-[hsl(var(--tp-gold))]">· accept in inbox</span>}
                         </p>
-                      </Link>
-                    </div>
-                  ))}
+                      </>
+                    );
+                    return (
+                      <div
+                        key={p.id}
+                        draggable
+                        onDragStart={() => setDragging(p.id)}
+                        onDragEnd={() => setDragging(null)}
+                        className="tp-surface p-3 cursor-grab active:cursor-grabbing hover:opacity-90"
+                      >
+                        {p.lead_id ? (
+                          <Link to={`/team/sales/clients/${p.lead_id}/projects/${p.id}`}>{inner}</Link>
+                        ) : (
+                          <div title="Accept this PRF in Documents Inbox to open the project workspace">{inner}</div>
+                        )}
+                      </div>
+                    );
+                  })}
                   {!cards.length && <p className="text-[11px] italic text-[hsl(var(--tp-text-dim))]">Empty</p>}
                 </div>
               </div>
