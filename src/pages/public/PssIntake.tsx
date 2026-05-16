@@ -31,6 +31,7 @@ const PssIntake = () => {
   const [activeLabel, setActiveLabel] = useState<string>("");
   const [ndaUploading, setNdaUploading] = useState(false);
   const [ndaUploaded, setNdaUploaded] = useState(false);
+  const [prfPrefill, setPrfPrefill] = useState<Record<string, any> | null>(null);
 
   // Resolve token + list drafts.
   const reload = useCallback(async () => {
