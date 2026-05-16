@@ -50,6 +50,14 @@ const TemplatesPage = () => {
     load();
   }, []);
 
+  const mimeForExt = (name: string): string => {
+    const ext = name.split(".").pop()?.toLowerCase() || "";
+    if (ext === "pdf") return "application/pdf";
+    if (ext === "xlsx") return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    if (ext === "xls") return "application/vnd.ms-excel";
+    return "application/octet-stream";
+  };
+
   const handleUpload = async (kind: Kind, file: File) => {
     setUploading(kind);
     try {
@@ -58,9 +66,10 @@ const TemplatesPage = () => {
 
       const ext = file.name.split(".").pop() || "bin";
       const path = `${kind}/v${Date.now()}.${ext}`;
+      const ct = file.type && file.type !== "application/octet-stream" ? file.type : mimeForExt(file.name);
       const { error: upErr } = await supabase.storage
         .from("document-templates")
-        .upload(path, file, { upsert: false, contentType: file.type });
+        .upload(path, file, { upsert: false, contentType: ct });
       if (upErr) throw upErr;
 
       // Deactivate previous active.
