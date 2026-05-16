@@ -600,3 +600,52 @@ function joinUnit(v?: string, u?: string) {
   if (!v) return "";
   return u ? `${v} ${u}` : v;
 }
+
+function validatePss(d: PssData): string[] {
+  const errors: string[] = [];
+  const need = (cond: any, label: string) => { if (!cond) errors.push(label); };
+
+  // Identity
+  need(d.header.company_name?.trim(), "Company name");
+  need(d.header.customer_name?.trim(), "Customer / contact name");
+  need(d.header.product_name?.trim(), "Product name");
+
+  // Product (raw weight may be TBD)
+  need(
+    d.product.target_unit_weight_raw_tbd || d.product.target_unit_weight_raw?.trim(),
+    "Target unit weight (raw) — or check TBD",
+  );
+  need(d.product.shape?.trim(), "Shape");
+  need(d.product.intended_use?.trim(), "Intended use");
+  need(d.product.target_shelf_life?.trim(), "Target shelf life");
+
+  // Recipe
+  const ings = (d.recipe.ingredients || []).filter((i) => i.name?.trim() && i.weight?.trim());
+  need(ings.length > 0, "At least one ingredient with name and weight");
+
+  // Process
+  need(d.process.method?.trim(), "Process method");
+  const steps = (d.process.pre_bake?.steps || []).filter((s) => s.action?.trim());
+  need(steps.length > 0, "At least one process step");
+
+  // Bake fields only required when method is not no-bake / not TBD
+  const m = d.process.method || "";
+  const noBake = /^no-?bake/i.test(m.trim());
+  const tbdMethod = m === "Not determined yet";
+  if (!noBake && !tbdMethod && m) {
+    need(d.process.bake?.temperature?.toString().trim(), "Bake temperature");
+    need(d.process.bake?.time_minutes?.toString().trim(), "Bake time (min)");
+  }
+
+  // Packaging — require primary unless user marks packaging as TBD via Adventure Bakery placeholder
+  const p = d.packaging.primary || {};
+  const packagingTbd = (p.vessel || "").toLowerCase().includes("tbd")
+    || (p.vessel || "").toLowerCase().includes("adventure bakery");
+  if (!packagingTbd) {
+    need(p.vessel?.trim(), "Primary packaging vessel (or note Adventure Bakery to design)");
+    need(p.units_per_pack?.toString().trim(), "Units per pack");
+    need(p.net_weight_per_pack?.toString().trim(), "Net weight per pack");
+  }
+
+  return errors;
+}
