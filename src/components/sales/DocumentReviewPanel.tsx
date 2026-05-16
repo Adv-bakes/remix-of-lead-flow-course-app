@@ -85,6 +85,13 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
     }
 
     if (status === "approved" && doc.user_id) {
+      // Always log per-doc approval
+      await supabase.from("client_activity").insert({
+        client_id: doc.user_id,
+        action: `${docType}_approved`,
+        payload: { document_id: documentId, file_name: doc.file_name },
+      });
+
       // Check if this client has an approved NDA AND approved PSS
       const { data: clientDocs } = await supabase
         .from("client_documents")
