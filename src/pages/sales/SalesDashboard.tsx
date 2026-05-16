@@ -37,7 +37,32 @@ const SalesDashboard = () => {
       .select("id, product_name, company_name, email, sales_stage, sales_stage_updated_at, lead_id, quote_approved_at")
       .order("sales_stage_updated_at", { ascending: false });
     if (error) toast.error(error.message);
-    setProjects((data ?? []).map((p: any) => ({ ...p, sales_stage: (p.sales_stage as Stage) || "Lead In" })));
+    const rows = (data ?? []).map((p: any) => ({ ...p, sales_stage: (p.sales_stage as Stage) || "Lead In" })) as ProjectCard[];
+    setProjects(rows);
+
+    // Self-heal: link any PRF missing a lead_id to its matching sales_lead by email.
+    const orphans = rows.filter(p => !p.lead_id && p.email);
+    if (orphans.length) {
+      const emails = Array.from(new Set(orphans.map(o => o.email!.toLowerCase())));
+      const { data: leads } = await (supabase as any)
+        .from("sales_leads")
+        .select("id, email")
+        .in("email", emails);
+      const byEmail: Record<string, string> = {};
+      (leads || []).forEach((l: any) => { if (l.email) byEmail[l.email.toLowerCase()] = l.id; });
+      const patches = orphans
+        .map(o => ({ id: o.id, lead_id: byEmail[o.email!.toLowerCase()] }))
+        .filter(p => p.lead_id);
+      if (patches.length) {
+        await Promise.all(patches.map(p =>
+          (supabase as any).from("prf_submissions").update({ lead_id: p.lead_id }).eq("id", p.id)
+        ));
+        setProjects(ps => ps.map(p => {
+          const match = patches.find(x => x.id === p.id);
+          return match ? { ...p, lead_id: match.lead_id } : p;
+        }));
+      }
+    }
 
     const { count } = await supabase
       .from("prf_submissions")
