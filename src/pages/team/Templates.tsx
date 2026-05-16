@@ -111,9 +111,25 @@ const TemplatesPage = () => {
     return data.signedUrl;
   };
 
-  const view = async (path: string) => {
+  const view = async (path: string, name: string) => {
     const url = await getSignedUrl(path);
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
+    if (!url) return;
+    const ext = name.split(".").pop()?.toLowerCase() || "";
+    if (ext === "xlsx" || ext === "xls") {
+      toast.message("Excel files can't be previewed in the browser — downloading instead.");
+      return download(path, name);
+    }
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Open failed (${res.status})`);
+      const buf = await res.arrayBuffer();
+      const blob = new Blob([buf], { type: mimeForExt(name) });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (e: any) {
+      toast.error(e?.message || "Could not open file");
+    }
   };
 
   const download = async (path: string, name: string) => {
