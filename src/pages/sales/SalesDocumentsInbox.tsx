@@ -37,7 +37,7 @@ const SalesDocumentsInbox = () => {
       supabase
         .from("client_documents")
         .select("id, document_type, file_name, file_path, uploaded_at, user_id, review_status, review_notes")
-        .in("document_type", ["nda", "pss", "NDA", "PSS"])
+        .or("document_type.eq.nda,document_type.eq.pss,document_type.eq.NDA,document_type.eq.PSS")
         .in("review_status", ["pending", "ai_passed", "ai_flagged"])
         .order("uploaded_at", { ascending: false }),
     ]);

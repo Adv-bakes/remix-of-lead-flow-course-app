@@ -121,7 +121,7 @@ export default function AddClientFlow() {
       await supabase.from("client_documents").insert({
         user_id: newClientId,
         uploaded_by: user?.id,
-        document_type: docType,
+        document_type: (docType || "").toLowerCase(),
         file_path: path,
         file_name: file.name,
       });

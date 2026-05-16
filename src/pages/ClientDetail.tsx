@@ -116,7 +116,7 @@ export default function ClientDetail() {
       await supabase.from("client_documents").insert({
         user_id: userId,
         uploaded_by: user?.id,
-        document_type: uploadDocType,
+        document_type: (uploadDocType || "").toLowerCase(),
         file_path: path,
         file_name: uploadFile.name,
       });
