@@ -67,8 +67,8 @@ export const CoachChat = ({ currentSection = "Concept", progress = 0 }) => {
                 </div>
 
                 {/* Progress Ring */}
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-                  <svg className="w-10 h-10 -rotate-90" viewBox="0 0 40 40">
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+                  <svg className="w-7 h-7 -rotate-90" viewBox="0 0 40 40">
                     <circle cx="20" cy="20" r="16" stroke="hsl(43,52%,50%/0.15)" strokeWidth="2" fill="none" />
                     <circle
                       cx="20"
@@ -87,7 +87,7 @@ export const CoachChat = ({ currentSection = "Concept", progress = 0 }) => {
                     />
                   </svg>
                   <div
-                    className="absolute inset-0 flex items-center justify-center text-[11px] font-bold"
+                    className="absolute inset-0 flex items-center justify-center text-[9px] font-bold"
                     style={{ color: "hsl(43,52%,35%)" }}
                   >
                     {Math.round(progress)}%
