@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_warehouses: {
+        Row: {
+          address: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       batch_sheets: {
         Row: {
           client_user_id: string | null
@@ -933,6 +957,7 @@ export type Database = {
           intended_application: Json | null
           is_nutraceutical: boolean | null
           label_responsibility: string | null
+          lead_id: string | null
           master_carton_requirements: string | null
           net_weight_per_primary_pack: string | null
           net_weight_per_primary_pack_unit: string | null
@@ -947,6 +972,9 @@ export type Database = {
           primary_packaging_vessel: string | null
           product_name: string | null
           project_type: string | null
+          quote_approved_at: string | null
+          sales_stage: string | null
+          sales_stage_updated_at: string | null
           same_as_initial_contact: boolean | null
           secondary_packaging: string | null
           secondary_packaging_other: string | null
@@ -989,6 +1017,7 @@ export type Database = {
           intended_application?: Json | null
           is_nutraceutical?: boolean | null
           label_responsibility?: string | null
+          lead_id?: string | null
           master_carton_requirements?: string | null
           net_weight_per_primary_pack?: string | null
           net_weight_per_primary_pack_unit?: string | null
@@ -1003,6 +1032,9 @@ export type Database = {
           primary_packaging_vessel?: string | null
           product_name?: string | null
           project_type?: string | null
+          quote_approved_at?: string | null
+          sales_stage?: string | null
+          sales_stage_updated_at?: string | null
           same_as_initial_contact?: boolean | null
           secondary_packaging?: string | null
           secondary_packaging_other?: string | null
@@ -1045,6 +1077,7 @@ export type Database = {
           intended_application?: Json | null
           is_nutraceutical?: boolean | null
           label_responsibility?: string | null
+          lead_id?: string | null
           master_carton_requirements?: string | null
           net_weight_per_primary_pack?: string | null
           net_weight_per_primary_pack_unit?: string | null
@@ -1059,6 +1092,9 @@ export type Database = {
           primary_packaging_vessel?: string | null
           product_name?: string | null
           project_type?: string | null
+          quote_approved_at?: string | null
+          sales_stage?: string | null
+          sales_stage_updated_at?: string | null
           same_as_initial_contact?: boolean | null
           secondary_packaging?: string | null
           secondary_packaging_other?: string | null
@@ -1383,28 +1419,52 @@ export type Database = {
       }
       production_orders: {
         Row: {
-          case_count: number
+          case_count: number | null
+          client_id: string | null
           created_at: string | null
           created_by: string | null
           id: string
+          items: Json | null
+          notes: string | null
           product_id: string | null
+          qb_estimate_accepted_at: string | null
+          qb_estimate_sent_at: string | null
+          ship_to_kind: string | null
+          ship_to_warehouse_id: string | null
           status: string | null
+          waste_pct: number | null
         }
         Insert: {
-          case_count: number
+          case_count?: number | null
+          client_id?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
+          items?: Json | null
+          notes?: string | null
           product_id?: string | null
+          qb_estimate_accepted_at?: string | null
+          qb_estimate_sent_at?: string | null
+          ship_to_kind?: string | null
+          ship_to_warehouse_id?: string | null
           status?: string | null
+          waste_pct?: number | null
         }
         Update: {
-          case_count?: number
+          case_count?: number | null
+          client_id?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
+          items?: Json | null
+          notes?: string | null
           product_id?: string | null
+          qb_estimate_accepted_at?: string | null
+          qb_estimate_sent_at?: string | null
+          ship_to_kind?: string | null
+          ship_to_warehouse_id?: string | null
           status?: string | null
+          waste_pct?: number | null
         }
         Relationships: [
           {
@@ -1499,6 +1559,12 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"] | null
           sales_stage: string | null
           sales_stage_updated_at: string | null
+          shipping_address_line1: string | null
+          shipping_address_line2: string | null
+          shipping_city: string | null
+          shipping_country: string | null
+          shipping_postal_code: string | null
+          shipping_state: string | null
           target_market: string | null
           website: string | null
         }
@@ -1521,6 +1587,12 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"] | null
           sales_stage?: string | null
           sales_stage_updated_at?: string | null
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_city?: string | null
+          shipping_country?: string | null
+          shipping_postal_code?: string | null
+          shipping_state?: string | null
           target_market?: string | null
           website?: string | null
         }
@@ -1543,6 +1615,12 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"] | null
           sales_stage?: string | null
           sales_stage_updated_at?: string | null
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_city?: string | null
+          shipping_country?: string | null
+          shipping_postal_code?: string | null
+          shipping_state?: string | null
           target_market?: string | null
           website?: string | null
         }
