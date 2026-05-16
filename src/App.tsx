@@ -69,6 +69,8 @@ import SalesDocumentsInbox from "./pages/sales/SalesDocumentsInbox";
 import SalesArchive from "./pages/sales/SalesArchive";
 import SalesProjectWorkspace from "./pages/sales/SalesProjectWorkspace";
 import MyPrfs from "./pages/MyPrfs";
+import Templates from "./pages/team/Templates";
+import PssIntake from "./pages/public/PssIntake";
 
 // Other section skeletons (Phase 0)
 import {
@@ -100,6 +102,7 @@ const App = () => (
           <Route path="/access-pending" element={<AccessPending />} />
           <Route path="/prf-startup" element={<PrfStartup />} />
           <Route path="/prf-established" element={<PrfEstablished />} />
+          <Route path="/p/pss/:token" element={<PssIntake />} />
 
           {/* ========== PORTAL 1: BRAND PORTAL ========== */}
           <Route path="/brand-portal" element={
@@ -345,6 +348,11 @@ const App = () => (
           <Route path="/team/sales/inbox" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><SalesDocumentsInbox /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/sales/templates" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><Templates /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/sales/archive" element={

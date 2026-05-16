@@ -68,13 +68,30 @@ const SalesDocumentsInbox = () => {
       .eq("id", row.id);
     if (error) return toast.error(error.message);
 
+    // Find the lead and auto-send NDA + PSS magic link.
     if (row.email) {
-      await (supabase as any)
+      const { data: lead } = await (supabase as any)
         .from("sales_leads")
-        .update({ stage: "Send Documents", stage_updated_at: new Date().toISOString() })
-        .eq("email", row.email.toLowerCase());
+        .select("id")
+        .eq("email", row.email.toLowerCase())
+        .maybeSingle();
+      if (lead?.id) {
+        const { data: sendRes, error: sendErr } = await supabase.functions.invoke("send-client-documents", {
+          body: { leadId: lead.id },
+        });
+        if (sendErr) {
+          toast.error(`Accepted, but email failed: ${sendErr.message}`);
+        } else if ((sendRes as any)?.error) {
+          toast.error(`Accepted, but email failed: ${(sendRes as any).error}`);
+        } else {
+          toast.success(`Accepted — documents emailed to ${row.email}`);
+        }
+      } else {
+        toast.success("Accepted (no matching lead found, email not sent)");
+      }
+    } else {
+      toast.success("Accepted");
     }
-    toast.success("Accepted — moved to Send Documents");
     setRows((r) => r.filter((x) => x.id !== row.id));
   };
 
