@@ -41,6 +41,10 @@ const PssIntake = () => {
     setInfo(row || { valid: false, expired: false });
     if (!row?.valid || row.expired) return;
 
+    // Pre-fill from prior PRF submission (finished form, weights, packaging…)
+    const { data: prf } = await (supabase as any).rpc("get_prf_prefill_for_token", { _token: token });
+    setPrfPrefill(prf || null);
+
     const { data: list } = await (supabase as any).rpc("list_pss_for_token", { _token: token });
     let rows: PssRow[] = list || [];
     if (rows.length === 0) {
