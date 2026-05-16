@@ -22,10 +22,15 @@ export type Database = {
           data_json: Json | null
           generated_from: string | null
           id: string
+          last_edited_by: string | null
           lead_id: string | null
           pss_document_id: string | null
           status: string
+          superseded_at: string | null
+          superseded_by_version: number | null
           updated_at: string
+          version: number
+          xlsx_path: string | null
         }
         Insert: {
           client_user_id?: string | null
@@ -34,10 +39,15 @@ export type Database = {
           data_json?: Json | null
           generated_from?: string | null
           id?: string
+          last_edited_by?: string | null
           lead_id?: string | null
           pss_document_id?: string | null
           status?: string
+          superseded_at?: string | null
+          superseded_by_version?: number | null
           updated_at?: string
+          version?: number
+          xlsx_path?: string | null
         }
         Update: {
           client_user_id?: string | null
@@ -46,10 +56,15 @@ export type Database = {
           data_json?: Json | null
           generated_from?: string | null
           id?: string
+          last_edited_by?: string | null
           lead_id?: string | null
           pss_document_id?: string | null
           status?: string
+          superseded_at?: string | null
+          superseded_by_version?: number | null
           updated_at?: string
+          version?: number
+          xlsx_path?: string | null
         }
         Relationships: []
       }
