@@ -237,7 +237,25 @@ export function PssWizard(props: {
         <Section title="Product specs">
           <Row>
             <Field label="Target unit weight — raw">
-              <input className="tp-input" value={data.product.target_unit_weight_raw || ""} onChange={(e) => update((d) => (d.product.target_unit_weight_raw = e.target.value, d))} />
+              <input
+                className="tp-input"
+                disabled={!!data.product.target_unit_weight_raw_tbd}
+                value={data.product.target_unit_weight_raw_tbd ? "" : (data.product.target_unit_weight_raw || "")}
+                onChange={(e) => update((d) => (d.product.target_unit_weight_raw = e.target.value, d))}
+              />
+              <label className="flex items-center gap-2 text-[11px] mt-1 text-[hsl(var(--tp-text-dim))]">
+                <input
+                  type="checkbox"
+                  checked={!!data.product.target_unit_weight_raw_tbd}
+                  onChange={(e) => update((d) => {
+                    d.product.target_unit_weight_raw_tbd = e.target.checked;
+                    if (e.target.checked) d.product.target_unit_weight_raw = "TBD";
+                    else if (d.product.target_unit_weight_raw === "TBD") d.product.target_unit_weight_raw = "";
+                    return d;
+                  })}
+                />
+                To be determined (TBD)
+              </label>
             </Field>
             <Field label="Target unit weight — baked">
               <input className="tp-input" value={data.product.target_unit_weight_baked || ""} onChange={(e) => update((d) => (d.product.target_unit_weight_baked = e.target.value, d))} />
