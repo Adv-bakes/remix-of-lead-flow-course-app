@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.bootstrap-admin]
 verify_jwt = false
+
+[functions.finalize-pss-submission]
+verify_jwt = false
