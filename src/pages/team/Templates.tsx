@@ -116,8 +116,9 @@ const TemplatesPage = () => {
     if (!url) return;
     const ext = name.split(".").pop()?.toLowerCase() || "";
     if (ext === "xlsx" || ext === "xls") {
-      toast.message("Excel files can't be previewed in the browser — downloading instead.");
-      return download(path, name);
+      const viewer = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`;
+      window.open(viewer, "_blank", "noopener,noreferrer");
+      return;
     }
     try {
       const res = await fetch(url);
