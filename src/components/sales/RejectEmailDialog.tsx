@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mic, MicOff, Sparkles, Send, X } from "lucide-react";
+import { Mic, MicOff, Sparkles, Mail, Copy, X, ExternalLink } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -14,6 +14,8 @@ interface Props {
   productName?: string | null;
 }
 
+const TEAM_CC = "scale@adventurebakery.info";
+
 export const RejectEmailDialog = ({
   open, onClose, onConfirmed, prfId, to, contactName, companyName, productName,
 }: Props) => {
@@ -21,13 +23,14 @@ export const RejectEmailDialog = ({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [drafting, setDrafting] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [archived, setArchived] = useState(false);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (!open) {
-      setDictation(""); setSubject(""); setBody(""); setListening(false);
+      setDictation(""); setSubject(""); setBody(""); setListening(false); setArchived(false);
       try { recognitionRef.current?.stop(); } catch {}
     }
   }, [open]);
@@ -82,40 +85,95 @@ export const RejectEmailDialog = ({
     setBody(data.body || "");
   };
 
-  const sendAndArchive = async () => {
-    if (!subject.trim() || !body.trim()) {
-      toast.error("Subject and body are required");
-      return;
+  const archiveOnly = async () => {
+    if (archived) return true;
+    setArchiving(true);
+    const { error: prfErr } = await supabase
+      .from("prf_submissions")
+      .update({ status: "rejected" })
+      .eq("id", prfId);
+    if (prfErr) {
+      setArchiving(false);
+      toast.error(prfErr.message);
+      return false;
     }
-    setSending(true);
-    const { data, error } = await supabase.functions.invoke("send-rejection-email", {
-      body: { to, subject, body, contactName },
+    if (to) {
+      await supabase
+        .from("sales_leads" as any)
+        .update({
+          stage: "Archived",
+          stage_updated_at: new Date().toISOString(),
+          archived_at: new Date().toISOString(),
+          archived_reason: dictation.slice(0, 500),
+        })
+        .eq("email", to.toLowerCase());
+    }
+    setArchiving(false);
+    setArchived(true);
+    return true;
+  };
+
+  const mailtoHref = () => {
+    const params = new URLSearchParams();
+    if (subject) params.set("subject", subject);
+    if (body) params.set("body", body);
+    params.set("cc", TEAM_CC);
+    return `mailto:${encodeURIComponent(to)}?${params.toString().replace(/\+/g, "%20")}`;
+  };
+
+  const gmailHref = () => {
+    const params = new URLSearchParams({
+      view: "cm",
+      fs: "1",
+      to,
+      cc: TEAM_CC,
+      su: subject,
+      body,
     });
-    if (error || data?.error) {
-      setSending(false);
-      toast.error(error?.message || data?.error || "Email failed");
-      return;
+    return `https://mail.google.com/mail/?${params.toString()}`;
+  };
+
+  const openMailApp = async () => {
+    if (!to) { toast.error("Recipient email missing on this PRF."); return; }
+    if (!subject.trim() || !body.trim()) { toast.error("Draft the email first."); return; }
+    const ok = await archiveOnly();
+    if (!ok) return;
+    window.location.href = mailtoHref();
+    toast.success("Archived. Opening your mail app…");
+    setTimeout(() => onConfirmed(), 600);
+  };
+
+  const openGmail = async () => {
+    if (!to) { toast.error("Recipient email missing on this PRF."); return; }
+    if (!subject.trim() || !body.trim()) { toast.error("Draft the email first."); return; }
+    const ok = await archiveOnly();
+    if (!ok) return;
+    window.open(gmailHref(), "_blank", "noopener");
+    toast.success("Archived. Gmail opened in a new tab.");
+    setTimeout(() => onConfirmed(), 600);
+  };
+
+  const copyDraft = async () => {
+    const text = `To: ${to}\nCc: ${TEAM_CC}\nSubject: ${subject}\n\n${body}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Draft copied to clipboard.");
+    } catch {
+      toast.error("Copy failed — select the body and copy manually.");
     }
+  };
 
-    // Mark PRF rejected
-    await supabase.from("prf_submissions").update({ status: "rejected" }).eq("id", prfId);
-    // Archive lead
-    await supabase
-      .from("sales_leads" as any)
-      .update({
-        stage: "Archived",
-        stage_updated_at: new Date().toISOString(),
-        archived_at: new Date().toISOString(),
-        archived_reason: dictation.slice(0, 500),
-      })
-      .eq("email", to.toLowerCase());
-
-    setSending(false);
-    toast.success("Sent. Lead archived.");
-    onConfirmed();
+  const archiveWithoutEmail = async () => {
+    const ok = await archiveOnly();
+    if (ok) {
+      toast.success("Archived without sending email.");
+      onConfirmed();
+    }
   };
 
   if (!open) return null;
+
+  const canSend = !!to && !!subject.trim() && !!body.trim();
 
   return (
     <div className="fixed inset-0 z-50 team-portal" onClick={onClose}>
@@ -125,11 +183,15 @@ export const RejectEmailDialog = ({
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[640px] tp-surface border border-[hsl(var(--tp-hairline))] rounded-xl overflow-hidden"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--tp-hairline))]">
-          <div>
+          <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--tp-text-dim))]">Reject & email</p>
-            <h2 className="font-display text-lg text-[hsl(var(--tp-text))]">
-              To: {contactName || to}
+            <h2 className="font-display text-lg text-[hsl(var(--tp-text))] truncate">
+              {contactName || "Recipient"}
             </h2>
+            <p className="text-xs text-[hsl(var(--tp-text-dim))] truncate">
+              To: {to || <span className="text-red-400">— no email on file —</span>}
+              {to && <> · cc {TEAM_CC}</>}
+            </p>
           </div>
           <button onClick={onClose} className="tp-btn"><X className="w-4 h-4" /></button>
         </div>
@@ -182,16 +244,26 @@ export const RejectEmailDialog = ({
               </div>
             </>
           )}
+
+          <p className="text-[11px] text-[hsl(var(--tp-text-dim))] leading-relaxed">
+            Sending happens in your own mail app from <span className="text-[hsl(var(--tp-text))]">{TEAM_CC}</span>.
+            The PRF is archived as soon as you open the mail app or click "Archive without email" — the email itself stays in your hands.
+          </p>
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[hsl(var(--tp-hairline))]">
+        <div className="flex flex-wrap items-center justify-end gap-2 px-5 py-4 border-t border-[hsl(var(--tp-hairline))]">
           <button onClick={onClose} className="tp-btn">Cancel</button>
-          <button
-            onClick={sendAndArchive}
-            disabled={sending || !subject.trim() || !body.trim()}
-            className="tp-btn tp-btn-primary disabled:opacity-50"
-          >
-            <Send className="w-3.5 h-3.5" /> {sending ? "Sending…" : "Send & archive"}
+          <button onClick={copyDraft} disabled={!subject.trim() && !body.trim()} className="tp-btn disabled:opacity-50">
+            <Copy className="w-3.5 h-3.5" /> Copy
+          </button>
+          <button onClick={archiveWithoutEmail} disabled={archiving} className="tp-btn disabled:opacity-50">
+            Archive without email
+          </button>
+          <button onClick={openGmail} disabled={!canSend || archiving} className="tp-btn disabled:opacity-50">
+            <ExternalLink className="w-3.5 h-3.5" /> Gmail
+          </button>
+          <button onClick={openMailApp} disabled={!canSend || archiving} className="tp-btn tp-btn-primary disabled:opacity-50">
+            <Mail className="w-3.5 h-3.5" /> {archiving ? "Archiving…" : "Archive & open mail app"}
           </button>
         </div>
       </div>
