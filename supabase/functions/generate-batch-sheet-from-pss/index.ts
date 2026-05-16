@@ -148,6 +148,41 @@ serve(async (req) => {
       }
     }
 
+    // Pull existing sheet (so re-runs don't overwrite staff-entered vendor data)
+    const { data: existingSheet } = await admin
+      .from("batch_sheets")
+      .select("data_json")
+      .eq("pss_document_id", pss_document_id)
+      .maybeSingle();
+    const existingIngs: any[] = existingSheet?.data_json?.recipe?.ingredients || [];
+    const existingByName = new Map<string, any>(
+      existingIngs.map((e) => [String(e.name || "").toLowerCase().trim(), e]),
+    );
+
+    // Carry-forward vendor lookup: most recent prior batch sheet for this client
+    const vendorByName = new Map<string, { v1?: string; v2?: string; v3?: string; notes?: string }>();
+    if (clientUserId) {
+      const { data: priorSheets } = await admin
+        .from("batch_sheets")
+        .select("data_json, updated_at")
+        .eq("client_user_id", clientUserId)
+        .neq("pss_document_id", pss_document_id)
+        .order("updated_at", { ascending: false })
+        .limit(20);
+      for (const ps of priorSheets || []) {
+        const ings: any[] = ps?.data_json?.recipe?.ingredients || [];
+        for (const ing of ings) {
+          const k = String(ing.name || "").toLowerCase().trim();
+          if (!k || vendorByName.has(k)) continue;
+          if (ing.vendor_1 || ing.vendor_2 || ing.vendor_3) {
+            vendorByName.set(k, {
+              v1: ing.vendor_1, v2: ing.vendor_2, v3: ing.vendor_3, notes: ing.vendor_notes,
+            });
+          }
+        }
+      }
+    }
+
     const normalizedIngredients = rawIngredients.map((i) => {
       const weight = typeof i.weight === "number" ? i.weight : null;
       let percentage: number | null = null;
@@ -159,13 +194,25 @@ serve(async (req) => {
       } else if (typeof i.percentage === "number") {
         percentage = round2(i.percentage);
       }
+      const key = String(i.name || "").toLowerCase().trim();
+      const prev = existingByName.get(key);
+      const carried = vendorByName.get(key);
       return {
         name: i.name,
+        weight_g: weight,
         weight,
         weight_unit: i.weight_unit || exRecipe.weight_unit || null,
         percentage,
         category: i.category || null,
         notes: i.notes || null,
+        // Editable, staff-managed columns (preserve existing > carry forward > blank)
+        case_weight: prev?.case_weight ?? null,
+        case_weight_uom: prev?.case_weight_uom ?? null,
+        vendor_1: prev?.vendor_1 ?? carried?.v1 ?? null,
+        vendor_2: prev?.vendor_2 ?? carried?.v2 ?? null,
+        vendor_3: prev?.vendor_3 ?? carried?.v3 ?? null,
+        vendor_notes: prev?.vendor_notes ?? carried?.notes ?? null,
+        vendor_source: prev ? "staff" : (carried ? "prior_sheet" : null),
       };
     });
 
