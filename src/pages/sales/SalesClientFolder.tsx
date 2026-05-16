@@ -156,15 +156,16 @@ const SalesClientFolder = () => {
             <div className="tp-surface p-5">
               <p className="text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--tp-text-dim))] mb-3">Latest project</p>
               {prfs[0] ? (
-                <>
+                <Link to={`/team/sales/clients/${lead.id}/projects/${prfs[0].id}`} className="block hover:opacity-80 transition">
                   <p className="font-display text-lg text-[hsl(var(--tp-text))]">{prfs[0].product_name || "—"}</p>
                   <p className="text-sm text-[hsl(var(--tp-text-muted))] mt-1">{prfs[0].project_type || "—"}</p>
                   <p className="text-[11px] text-[hsl(var(--tp-text-dim))] mt-2">
                     Submitted {new Date(prfs[0].created_at).toLocaleDateString()} · {prfs[0].status}
                   </p>
-                </>
+                  <p className="text-[11px] text-[hsl(var(--tp-gold))] mt-3">Open project workspace →</p>
+                </Link>
               ) : (
-                <p className="text-sm italic text-[hsl(var(--tp-text-dim))]">No PRFs yet.</p>
+                <p className="text-sm italic text-[hsl(var(--tp-text-dim))]">No projects yet.</p>
               )}
             </div>
           </div>
