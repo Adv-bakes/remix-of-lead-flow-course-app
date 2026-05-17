@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { TeamPage } from "@/components/team/TeamPage";
 import { FileText, Upload, Download, ExternalLink } from "lucide-react";
 
-type Kind = "nda" | "pss_workbook";
+type Kind = "nda" | "pss_workbook" | "prf_template";
 
 interface Template {
   id: string;
