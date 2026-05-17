@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PrfReviewPanel } from "@/components/sales/PrfReviewPanel";
-import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send } from "lucide-react";
+import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
+import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate, type TemplateKind } from "@/lib/templates";
 
 const TABS = ["concept", "ingredients", "formulas", "packaging", "shelf-life", "products", "costing", "notes"] as const;
 
