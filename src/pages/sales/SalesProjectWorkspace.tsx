@@ -201,7 +201,7 @@ const SalesProjectWorkspace = () => {
               <Download className="w-3.5 h-3.5" /> Download Templates <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="z-50 bg-[hsl(var(--tp-surface))] border-[hsl(var(--tp-hairline))]">
+          <DropdownMenuContent align="start" className="z-50 bg-[hsl(var(--tp-surface-3))] border border-[hsl(var(--tp-hairline-strong))] text-[hsl(var(--tp-text))] shadow-2xl">
             <DropdownMenuItem disabled={!templates?.prf_template} onClick={() => downloadTemplate(templates?.prf_template ?? null, "prf_template")}>
               <FileText className="w-3.5 h-3.5 mr-2" /> Blank PRF
               {!templates?.prf_template && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
@@ -224,7 +224,7 @@ const SalesProjectWorkspace = () => {
               <Upload className="w-3.5 h-3.5" /> {uploadingKind ? "Uploading…" : "Upload Form"} <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="z-50 bg-[hsl(var(--tp-surface))] border-[hsl(var(--tp-hairline))]">
+          <DropdownMenuContent align="start" className="z-50 bg-[hsl(var(--tp-surface-3))] border border-[hsl(var(--tp-hairline-strong))] text-[hsl(var(--tp-text))] shadow-2xl">
             <DropdownMenuItem onClick={() => pssInputRef.current?.click()}>
               <FileCheck2 className="w-3.5 h-3.5 mr-2" /> Upload PSS
             </DropdownMenuItem>
