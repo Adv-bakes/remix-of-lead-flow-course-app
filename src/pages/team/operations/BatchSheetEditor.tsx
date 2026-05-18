@@ -150,6 +150,11 @@ const BatchSheetEditor = () => {
               <RefreshCw className="w-4 h-4 mr-1" />{regenerating ? "Regenerating…" : "Regenerate from PSS"}
             </Button>
           )}
+          {sheet.pss_document_id && !isSuperseded && (
+            <Button size="sm" variant="outline" onClick={syncWithPss} disabled={syncing}>
+              <RefreshCw className={`w-4 h-4 mr-1 ${syncing ? "animate-spin" : ""}`} />{syncing ? "Syncing…" : "Sync with PSS"}
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={save} disabled={saving || !dirty || isSuperseded}>
             <Save className="w-4 h-4 mr-1" />{saving ? "Saving…" : "Save as new version"}
           </Button>
