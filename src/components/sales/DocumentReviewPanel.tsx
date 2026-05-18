@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { X, Check, AlertTriangle, Sparkles, Download, Copy, ExternalLink } from "lucide-react";
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) => {
+  const navigate = useNavigate();
   const [doc, setDoc] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [reviewing, setReviewing] = useState(false);
@@ -101,11 +103,13 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
 
     // PSS approved → kick off batch sheet generation, and check if both NDA+PSS approved for this user → advance stage
     const docType = (doc.document_type || "").toLowerCase();
+    let batchSheetId: string | null = null;
     if (status === "approved" && docType === "pss") {
-      const { error: bsErr } = await supabase.functions.invoke("generate-batch-sheet-from-pss", {
+      const { error: bsErr, data: bsData } = await supabase.functions.invoke("generate-batch-sheet-from-pss", {
         body: { pss_document_id: documentId },
       });
       if (bsErr) toast.warning("PSS approved but batch sheet draft failed — you can retry from the project.");
+      else batchSheetId = (bsData as any)?.batch_sheet?.id || null;
     }
 
     if (status === "approved" && doc.user_id) {
@@ -151,20 +155,26 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
         });
       }
       toast.success("Document rejected — client can resubmit");
-    } else {
-      if (doc.user_id) {
-        await supabase.from("client_activity").insert({
-          client_id: doc.user_id,
-          action: `${docType}_approved`,
-          payload: { document_id: documentId, file_name: doc.file_name },
-        });
-      }
-      toast.success("Approved");
     }
 
     setBusy(false);
     onDecided?.();
     onClose();
+
+    // Navigate to the client folder after PSS approval so the salesperson lands in context
+    if (status === "approved" && docType === "pss" && doc.user_id) {
+      const { data: lead } = await (supabase as any)
+        .from("sales_leads")
+        .select("id")
+        .eq("profile_id", doc.user_id)
+        .maybeSingle();
+      if (lead?.id) {
+        navigate(`/team/sales/clients/${lead.id}`);
+        if (batchSheetId) toast.success(`Batch sheet v1 created — open it from the project workspace.`);
+      } else {
+        toast.info("Approved, but no client folder linked to this document yet.");
+      }
+    }
   };
 
   if (!documentId) return null;

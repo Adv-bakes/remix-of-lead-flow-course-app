@@ -169,7 +169,17 @@ CRITICAL RULES:
 - process = true if at least 2 ordered steps are present; tag each with ingredients_added[] when possible.
 - Classify process.method from the allowed taxonomy; null if unclear.
 - signature = true ONLY if an explicit signature line / "Signed by" appears with a name.
-- Keep step "action" concise (≤ 120 chars). Cap pre_bake.steps at 20.`;
+- Keep step "action" concise (≤ 120 chars). Cap pre_bake.steps at 20.
+
+SERVICES_TO_OFFER RULES (Adventure Bakery proprietary services — be strict):
+- Allowed services, ONLY include when the corresponding section is missing or incomplete:
+  * "Formula calculator" — when recipe ingredient weights or total batch weight are missing/inconsistent.
+  * "Packaging design & optimization" — when packaging.primary.vessel AND packaging.secondary.type are both missing.
+  * "Nutritional panel development" — when optional_sections.nutritional_panel is null/empty.
+  * "Allergen declaration & risk review" — when optional_sections.allergens is null/empty.
+  * "Shelf-life study & validation" — when optional_sections.shelf_life is null/empty.
+- NEVER offer "process development", "process design", "recipe optimization", "total batch weight calculator", or "bake profile development". Process is proprietary to Adventure Bakery.
+- Do not invent other services. If everything is present, return an empty array.`;
       userPrompt = `PSS contents (CSV/text):\n\n${extracted}`;
     }
 
@@ -180,6 +190,21 @@ CRITICAL RULES:
     if (docType === "nda") {
       review_status = verdict.fully_executed ? "ai_passed" : "ai_flagged";
     } else {
+      // Enforce Adventure Bakery service rules server-side (AI may drift)
+      const ex = verdict.extracted || {};
+      const opt = ex.optional_sections || {};
+      const recipe = ex.recipe || {};
+      const pkg = ex.packaging || {};
+      const ings = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+      const hasWeights = ings.length > 0 && ings.every((i: any) => typeof i.weight === "number" && i.weight > 0);
+      const allowed: string[] = [];
+      if (ings.length === 0 || !hasWeights || !recipe.total_batch_weight) allowed.push("Formula calculator");
+      if (!pkg?.primary?.vessel && !pkg?.secondary?.type) allowed.push("Packaging design & optimization");
+      if (!opt.nutritional_panel) allowed.push("Nutritional panel development");
+      if (!opt.allergens) allowed.push("Allergen declaration & risk review");
+      if (!opt.shelf_life) allowed.push("Shelf-life study & validation");
+      verdict.services_to_offer = allowed;
+
       const req = verdict.has_required || {};
       const requiredOk = req.company && req.product && req.recipe && req.process &&
         req.size_weight && req.units_per_primary && req.units_per_retail && req.signature;

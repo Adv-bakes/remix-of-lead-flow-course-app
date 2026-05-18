@@ -45,18 +45,38 @@ serve(async (req) => {
     const product = d.product || {};
     const ings: any[] = d.recipe?.ingredients || [];
     const pkg = d.packaging || {};
+    const process = d.process || {};
+    const changedAt = sheet.updated_at ? new Date(sheet.updated_at).toLocaleString() : "—";
 
     const wb = XLSX.utils.book_new();
 
-    // ----- Recipe sheet -----
+    // ----- Sheet 1: Batch Sheet (structured AB layout) -----
     const aoa: any[][] = [];
-    aoa.push([`Batch Sheet — ${header.product_name || ""}`]);
-    aoa.push([`Client: ${header.company_name || ""}`, "", `Version: ${sheet.version}`, "", `Status: ${sheet.status}`]);
-    aoa.push([`Product Code: ${header.product_code || ""}`, "", `Total Batch Weight: ${d.recipe?.total_batch_weight ?? ""} ${d.recipe?.weight_unit ?? ""}`]);
+    aoa.push(["ADVENTURE BAKERY — BATCH SHEET", "", "", "", "", `Version: v${sheet.version}`]);
+    aoa.push([`Last changed: ${changedAt}`, "", "", "", "", `Source: ${(sheet.source_change || "initial").replace(/_/g, " ")}`]);
     aoa.push([]);
+    // Header block
+    aoa.push(["HEADER"]);
+    aoa.push(["Company", header.company_name || "", "", "Customer", header.customer_name || ""]);
+    aoa.push(["Product Name", header.product_name || "", "", "Product Code", header.product_code || ""]);
+    aoa.push(["Version #", header.version_number || "", "", "Revision #", header.revision_number || ""]);
+    aoa.push(["Prepared By", header.prepared_by || "", "", "Approved By", header.approved_by || ""]);
+    aoa.push(["Date of Issue", header.date_of_issue || "", "", "Status", sheet.status]);
+    aoa.push([]);
+    // Product block
+    aoa.push(["PRODUCT"]);
+    aoa.push(["Target Unit Weight (raw)", `${product.target_unit_weight_raw ?? ""} ${product.weight_unit ?? ""}`.trim()]);
+    aoa.push(["Target Unit Weight (baked)", product.target_unit_weight_baked ?? ""]);
+    aoa.push(["Expected Bake Loss %", product.expected_bake_loss_pct ?? ""]);
+    aoa.push(["Shape", product.shape || ""]);
+    aoa.push(["Intended Use", product.intended_use || ""]);
+    aoa.push(["Target Shelf Life", product.target_shelf_life || ""]);
+    aoa.push([]);
+    // Recipe block
+    aoa.push(["RECIPE", "", "", "", "", `Total Batch Weight: ${d.recipe?.total_batch_weight ?? ""} ${d.recipe?.weight_unit ?? ""}`]);
     aoa.push([
       "#", "Ingredient", "%Formula", "Weight (g)", "Case Weight", "UoM",
-      "Vendor 1", "Vendor 1 Notes", "Vendor 2", "Vendor 2 Notes", "Vendor 3", "Vendor 3 Notes",
+      "Vendor 1", "Vendor 2", "Vendor 3", "Vendor Notes",
     ]);
     ings.forEach((i, idx) => {
       aoa.push([
@@ -67,39 +87,44 @@ serve(async (req) => {
         i.case_weight ?? "",
         i.case_weight_uom ?? "",
         i.vendor_1 ?? "",
-        "",
         i.vendor_2 ?? "",
-        "",
         i.vendor_3 ?? "",
         i.vendor_notes ?? "",
       ]);
     });
+    aoa.push([]);
+    // Process block (proprietary)
+    aoa.push(["PROCESS (proprietary)", "", "", "", "", `Method: ${process.method || "—"}`]);
+    aoa.push(["#", "Action", "Ingredients Added", "Mix Time (min)", "Mix Speed"]);
+    (process.pre_bake?.steps || []).forEach((s: any, idx: number) => {
+      aoa.push([
+        idx + 1,
+        s.action || "",
+        Array.isArray(s.ingredients_added) ? s.ingredients_added.join(", ") : "",
+        s.mix_time_min ?? "",
+        s.mix_speed ?? "",
+      ]);
+    });
+    if (!process.is_no_bake && process.bake) {
+      aoa.push([]);
+      aoa.push(["Bake", `${process.bake.temperature ?? ""}${process.bake.temp_unit ?? ""} for ${process.bake.time_minutes ?? ""} min`]);
+    }
+    aoa.push([]);
+    // Packaging block
+    aoa.push(["PACKAGING"]);
+    aoa.push(["Primary Vessel", pkg.primary?.vessel || ""]);
+    aoa.push(["Units / Primary Pack", pkg.primary?.units_per_pack ?? ""]);
+    aoa.push(["Net Weight / Primary Pack", `${pkg.primary?.net_weight_per_pack ?? ""} ${pkg.primary?.weight_unit ?? ""}`.trim()]);
+    aoa.push(["Secondary Pack", pkg.secondary?.type || ""]);
+    aoa.push(["Units / Case", pkg.secondary?.units_per_case ?? ""]);
+    aoa.push(["Cases / Pallet", pkg.palletizing?.cases_per_pallet ?? ""]);
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = [
-      { wch: 4 }, { wch: 32 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 8 },
-      { wch: 22 }, { wch: 18 }, { wch: 22 }, { wch: 18 }, { wch: 22 }, { wch: 18 },
+      { wch: 6 }, { wch: 34 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 10 },
+      { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 24 },
     ];
-    XLSX.utils.book_append_sheet(wb, ws, "Recipe");
-
-    // ----- Spec sheet -----
-    const spec: any[][] = [
-      ["Field", "Value"],
-      ["Product Name", header.product_name || ""],
-      ["Company", header.company_name || ""],
-      ["Method", d.process?.method || ""],
-      ["No-Bake", d.process?.is_no_bake ? "Yes" : "No"],
-      ["Target Unit Weight (raw)", `${product.target_unit_weight_raw ?? ""} ${product.weight_unit ?? ""}`.trim()],
-      ["Target Unit Weight (baked)", product.target_unit_weight_baked ?? ""],
-      ["Primary Pack", pkg.primary?.vessel || ""],
-      ["Units / Primary Pack", pkg.primary?.units_per_pack ?? ""],
-      ["Net Weight / Primary Pack", `${pkg.primary?.net_weight_per_pack ?? ""} ${pkg.primary?.weight_unit ?? ""}`.trim()],
-      ["Secondary Pack", pkg.secondary?.type || ""],
-      ["Units / Case", pkg.secondary?.units_per_case ?? ""],
-    ];
-    const wsSpec = XLSX.utils.aoa_to_sheet(spec);
-    wsSpec["!cols"] = [{ wch: 32 }, { wch: 40 }];
-    XLSX.utils.book_append_sheet(wb, wsSpec, "Spec");
+    XLSX.utils.book_append_sheet(wb, ws, "Batch Sheet");
 
     const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as Uint8Array;
 
