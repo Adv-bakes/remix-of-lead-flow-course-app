@@ -381,38 +381,67 @@ const SalesProjectWorkspace = () => {
                className="absolute right-0 top-0 h-full w-full max-w-[680px] tp-surface border-l border-[hsl(var(--tp-hairline))] overflow-y-auto">
             <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-[hsl(var(--tp-hairline))] bg-[hsl(var(--tp-surface))]/95 backdrop-blur">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--tp-gold))]">Internal · Adventure Bakery only</p>
-                <h2 className="font-display text-lg text-[hsl(var(--tp-text))]">Batch Sheet — {batchSheet.data_json?.product_name || prf.product_name}</h2>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--tp-gold))]">
+                  Internal · v{batchSheet.version} · {batchSheet.source_change?.replace(/_/g, " ") || "initial"}
+                </p>
+                <h2 className="font-display text-lg text-[hsl(var(--tp-text))]">
+                  Batch Sheet — {batchSheet.data_json?.header?.product_name || prf.product_name}
+                </h2>
               </div>
-              <button onClick={() => setBatchOpen(false)} className="tp-btn">Close</button>
+              <div className="flex items-center gap-2">
+                <Link to={`/team/operations/batch-sheets/${batchSheet.id}`} className="tp-btn tp-btn-primary">
+                  <ExternalLink className="w-3.5 h-3.5" /> Open full editor
+                </Link>
+                <button onClick={() => setBatchOpen(false)} className="tp-btn">Close</button>
+              </div>
             </div>
             <div className="p-6 space-y-6">
               <section>
-                <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-2">Recipe</p>
+                <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-2">
+                  Recipe ({batchSheet.data_json?.recipe?.ingredients?.length || 0} ingredients ·
+                  total {batchSheet.data_json?.recipe?.total_batch_weight ?? "—"} {batchSheet.data_json?.recipe?.weight_unit ?? ""})
+                </p>
                 <div className="tp-surface p-4">
-                  {(batchSheet.data_json?.ingredients || []).map((ing: any, i: number) => (
+                  {(batchSheet.data_json?.recipe?.ingredients || []).map((ing: any, i: number) => (
                     <div key={i} className="flex justify-between text-sm py-1 border-b border-[hsl(var(--tp-hairline))] last:border-0">
-                      <span>{ing.name || ing.ingredient_name}</span>
-                      <span className="text-[hsl(var(--tp-text-dim))]">{ing.percentage ?? "—"}%</span>
+                      <span>{ing.name}</span>
+                      <span className="text-[hsl(var(--tp-text-dim))]">
+                        {ing.weight_g ?? ing.weight ?? "—"} g · {ing.percentage ?? "—"}%
+                      </span>
                     </div>
                   ))}
-                  {(batchSheet.data_json?.ingredients || []).length === 0 && (
+                  {(batchSheet.data_json?.recipe?.ingredients || []).length === 0 && (
                     <p className="text-sm italic text-[hsl(var(--tp-text-dim))]">No ingredients parsed.</p>
                   )}
                 </div>
               </section>
               <section>
-                <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-2">Process steps</p>
+                <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-2">
+                  Process · {batchSheet.data_json?.process?.method || "method TBD"}
+                </p>
                 <ol className="tp-surface p-4 space-y-2 list-decimal pl-6 text-sm">
-                  {(batchSheet.data_json?.process_steps || []).map((s: string, i: number) => <li key={i}>{s}</li>)}
-                  {(batchSheet.data_json?.process_steps || []).length === 0 && (
+                  {(batchSheet.data_json?.process?.pre_bake?.steps || []).map((s: any, i: number) => (
+                    <li key={i}>
+                      {s.action || "(step)"} {s.mix_time_min ? `· ${s.mix_time_min}min` : ""} {s.mix_speed ? `· ${s.mix_speed}` : ""}
+                    </li>
+                  ))}
+                  {(batchSheet.data_json?.process?.pre_bake?.steps || []).length === 0 && (
                     <p className="text-sm italic text-[hsl(var(--tp-text-dim))] list-none">No process steps parsed.</p>
                   )}
                 </ol>
               </section>
+              <section>
+                <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-2">Packaging</p>
+                <div className="tp-surface p-4 text-sm space-y-1">
+                  <div className="flex justify-between"><span className="text-[hsl(var(--tp-text-dim))]">Primary</span><span>{batchSheet.data_json?.packaging?.primary?.vessel || "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-[hsl(var(--tp-text-dim))]">Units / pack</span><span>{batchSheet.data_json?.packaging?.primary?.units_per_pack ?? "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-[hsl(var(--tp-text-dim))]">Secondary</span><span>{batchSheet.data_json?.packaging?.secondary?.type || "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-[hsl(var(--tp-text-dim))]">Units / case</span><span>{batchSheet.data_json?.packaging?.secondary?.units_per_case ?? "—"}</span></div>
+                </div>
+              </section>
               <p className="text-[10px] text-[hsl(var(--tp-text-dim))]">
                 Generated {batchSheet.updated_at ? new Date(batchSheet.updated_at).toLocaleString() : "—"} from PSS.
-                Re-runs overwrite this draft.
+                Open the full editor to edit vendors, status, and version history.
               </p>
             </div>
           </div>
