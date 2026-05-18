@@ -292,19 +292,21 @@ serve(async (req) => {
       palletizing: exPack?.palletizing || { cases_per_pallet: null, pattern: null, notes: null },
     };
 
-    // ---------- SERVICES TO OFFER ----------
+    // ---------- SERVICES TO OFFER (Adventure Bakery proprietary services only) ----------
+    // Allowed: Formula calculator, Packaging design & optimization, Nutritional panel,
+    //          Allergen declaration & risk review, Shelf-life study & validation.
+    // NEVER offer process development — process is proprietary to Adventure Bakery.
     const services: string[] = [];
+    const recipeIncomplete = normalizedIngredients.length === 0
+      || !totalBatchWeight
+      || recipeWarnings.length > 0;
+    if (recipeIncomplete) services.push("Formula calculator");
+    if (!packaging.primary.vessel && !packaging.secondary.type) {
+      services.push("Packaging design & optimization");
+    }
     if (!exOpt.nutritional_panel) services.push("Nutritional panel development");
     if (!exOpt.allergens) services.push("Allergen declaration & risk review");
     if (!exOpt.shelf_life) services.push("Shelf-life study & validation");
-    if (!isNoBake && (!process.bake.temperature || !process.bake.time_minutes)) {
-      services.push("Bake profile development (time/temp)");
-    }
-    if (!packaging.palletizing.cases_per_pallet) services.push("Palletization & shipping plan");
-    if (!process.method) services.push("Process method classification & equipment plan");
-    if (!product.target_unit_weight_raw || String(product.target_unit_weight_raw).toUpperCase() === "TBD") {
-      services.push("Target unit weight (raw) — define with client");
-    }
 
     // ---------- FORMULA AUTO-CREATE (versioned) ----------
     let conceptId: number | null = concept?.id || null;
