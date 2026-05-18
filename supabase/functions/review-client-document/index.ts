@@ -169,7 +169,17 @@ CRITICAL RULES:
 - process = true if at least 2 ordered steps are present; tag each with ingredients_added[] when possible.
 - Classify process.method from the allowed taxonomy; null if unclear.
 - signature = true ONLY if an explicit signature line / "Signed by" appears with a name.
-- Keep step "action" concise (≤ 120 chars). Cap pre_bake.steps at 20.`;
+- Keep step "action" concise (≤ 120 chars). Cap pre_bake.steps at 20.
+
+SERVICES_TO_OFFER RULES (Adventure Bakery proprietary services — be strict):
+- Allowed services, ONLY include when the corresponding section is missing or incomplete:
+  * "Formula calculator" — when recipe ingredient weights or total batch weight are missing/inconsistent.
+  * "Packaging design & optimization" — when packaging.primary.vessel AND packaging.secondary.type are both missing.
+  * "Nutritional panel development" — when optional_sections.nutritional_panel is null/empty.
+  * "Allergen declaration & risk review" — when optional_sections.allergens is null/empty.
+  * "Shelf-life study & validation" — when optional_sections.shelf_life is null/empty.
+- NEVER offer "process development", "process design", "recipe optimization", "total batch weight calculator", or "bake profile development". Process is proprietary to Adventure Bakery.
+- Do not invent other services. If everything is present, return an empty array.`;
       userPrompt = `PSS contents (CSV/text):\n\n${extracted}`;
     }
 
