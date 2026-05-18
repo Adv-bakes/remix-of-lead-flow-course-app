@@ -361,19 +361,41 @@ export default function ClientDetail() {
             <p className="text-muted-foreground text-sm">No documents uploaded yet.</p>
           ) : (
             <div className="space-y-2">
-              {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-foreground text-sm">{doc.file_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {doc.document_type.toUpperCase()} · {new Date(doc.uploaded_at).toLocaleDateString()}
-                      </p>
+              {documents.map((doc) => {
+                const isPss = doc.document_type === "pss";
+                const sheet = isPss ? batchSheetsByPss[doc.id] : undefined;
+                return (
+                  <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground text-sm truncate">{doc.file_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.document_type.toUpperCase()} · {new Date(doc.uploaded_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
+                    {isPss && (
+                      sheet ? (
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to={`/team/operations/batch-sheets/${sheet.id}`}>
+                            <ExternalLink className="h-3.5 w-3.5 mr-1" />Open batch sheet v{sheet.version}
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => createBatchSheet(doc.id)}
+                          disabled={generatingForPss === doc.id}
+                        >
+                          <Sparkles className="h-3.5 w-3.5 mr-1" />
+                          {generatingForPss === doc.id ? "Creating…" : "Create batch sheet"}
+                        </Button>
+                      )
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
