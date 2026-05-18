@@ -437,6 +437,12 @@ const SalesProjectWorkspace = () => {
       </Tabs>
 
       <PrfReviewPanel prfId={openPrf ? (prfId as string) : null} onClose={() => setOpenPrf(false)} />
+      <PssPreviewDrawer
+        pssDocumentId={openPss && pss?.id ? pss.id : null}
+        onClose={() => setOpenPss(false)}
+        onSaved={() => { refreshDocs(); refreshBatchSheet(); }}
+      />
+
 
       {/* Batch sheet side panel — staff-only */}
       {batchOpen && batchSheet && (
