@@ -433,10 +433,12 @@ serve(async (req) => {
       await admin.from("client_activity").insert({
         client_id: lead.profile_id,
         actor_id: callerId,
-        action: "batch_sheet_drafted",
+        action: activeExisting ? "batch_sheet_regenerated_from_pss" : "batch_sheet_created",
         payload: {
           pss_document_id,
           batch_sheet_id: upserted.id,
+          version: nextVersion,
+          previous_version: activeExisting?.version || null,
           formula_id: formulaId,
           recipe_warnings: recipeWarnings,
           services_offered: services,
