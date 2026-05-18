@@ -28,6 +28,7 @@ const BatchSheetEditor = () => {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -104,6 +105,24 @@ const BatchSheetEditor = () => {
     if (data?.signed_url) window.open(data.signed_url, "_blank");
     toast.success("Excel exported");
   };
+  const syncWithPss = async () => {
+    if (!sheet) return;
+    setSyncing(true);
+    const { data, error } = await (supabase as any).functions.invoke("reconcile-pss-batch", {
+      body: { batch_sheet_id: sheet.id },
+    });
+    setSyncing(false);
+    if (error || data?.error) { toast.error(error?.message || data?.error || "Sync failed"); return; }
+    const f = data?.filled || {};
+    const total = (f.pss_filled_count || 0) + (f.batch_filled_count || 0);
+    if (total > 0) {
+      toast.success(`Synced: ${f.batch_filled_count || 0} batch field(s), ${f.pss_filled_count || 0} PSS field(s).`);
+      await load();
+      setDirty(false);
+    } else {
+      toast.info("Nothing to sync — both sides already aligned.");
+    }
+  };
 
 
   if (!sheet) return <TeamPage title="Batch sheet">Loading…</TeamPage>;
@@ -129,6 +148,11 @@ const BatchSheetEditor = () => {
           {sheet.pss_document_id && !isSuperseded && (
             <Button size="sm" variant="outline" onClick={regenerateFromPss} disabled={regenerating}>
               <RefreshCw className="w-4 h-4 mr-1" />{regenerating ? "Regenerating…" : "Regenerate from PSS"}
+            </Button>
+          )}
+          {sheet.pss_document_id && !isSuperseded && (
+            <Button size="sm" variant="outline" onClick={syncWithPss} disabled={syncing}>
+              <RefreshCw className={`w-4 h-4 mr-1 ${syncing ? "animate-spin" : ""}`} />{syncing ? "Syncing…" : "Sync with PSS"}
             </Button>
           )}
           <Button size="sm" variant="outline" onClick={save} disabled={saving || !dirty || isSuperseded}>

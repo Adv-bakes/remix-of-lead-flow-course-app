@@ -144,30 +144,101 @@ serve(async (req) => {
       }
     }
 
-    // Recipe ingredients: copy whole list if one side is empty
-    const pIngs = get(pssExtracted, ["recipe", "ingredients"]) || [];
-    const bIngs = get(batchJson, ["recipe", "ingredients"]) || [];
-    if (Array.isArray(pIngs) && pIngs.length === 0 && Array.isArray(bIngs) && bIngs.length > 0) {
-      pssExtracted.recipe = pssExtracted.recipe || {};
-      pssExtracted.recipe.ingredients = bIngs.map((i: any) => ({
-        name: i.name || i.ingredient_name,
-        weight: i.weight ?? i.weight_g ?? null,
-        weight_unit: i.weight_unit || "g",
-        percentage: i.percentage ?? i.percentage_formula ?? null,
-      }));
-      pssFilled += pssExtracted.recipe.ingredients.length;
-      pssChanges.push(`recipe.ingredients[+${pssExtracted.recipe.ingredients.length}]`);
-    } else if (Array.isArray(bIngs) && bIngs.length === 0 && Array.isArray(pIngs) && pIngs.length > 0) {
-      batchJson.recipe = batchJson.recipe || {};
-      batchJson.recipe.ingredients = pIngs.map((i: any) => ({
-        name: i.name,
-        weight: i.weight ?? null,
-        weight_unit: i.weight_unit || "g",
-        percentage: i.percentage ?? null,
-      }));
-      batchFilled += batchJson.recipe.ingredients.length;
-      batchChanges.push(`recipe.ingredients[+${batchJson.recipe.ingredients.length}]`);
-    }
+    // Recipe ingredients: per-row merge by normalized name (fall back to index).
+    // Shared fields filled blank-only; vendor / case fields stay batch-sheet only.
+    const norm = (s: any) => (s == null ? "" : String(s).trim().toLowerCase());
+    const SHARED_FIELDS = ["weight", "weight_g", "weight_unit", "percentage", "category", "notes"];
+    const PSS_FIELDS = ["name", "weight", "weight_unit", "percentage", "category", "notes"];
+
+    const pIngs: any[] = Array.isArray(get(pssExtracted, ["recipe", "ingredients"]))
+      ? get(pssExtracted, ["recipe", "ingredients"]) : [];
+    const bIngs: any[] = Array.isArray(get(batchJson, ["recipe", "ingredients"]))
+      ? get(batchJson, ["recipe", "ingredients"]) : [];
+
+    // Build lookup of batch rows by normalized name
+    const bByName = new Map<string, number>();
+    bIngs.forEach((r, i) => {
+      const k = norm(r?.name || r?.ingredient_name);
+      if (k && !bByName.has(k)) bByName.set(k, i);
+    });
+    const matchedBatchIdx = new Set<number>();
+
+    // PSS → batch: fill blanks on matched rows; append unmatched PSS rows
+    pIngs.forEach((pr, pi) => {
+      const key = norm(pr?.name);
+      let bi = key ? bByName.get(key) : undefined;
+      if (bi === undefined && !key && bIngs[pi]) bi = pi; // index fallback for nameless rows
+      if (bi === undefined) {
+        // Append new batch row from PSS (with vendor fields blank)
+        if (pr?.name || pr?.weight != null) {
+          bIngs.push({
+            name: pr.name ?? null,
+            weight: pr.weight ?? null,
+            weight_g: pr.weight_g ?? pr.weight ?? null,
+            weight_unit: pr.weight_unit ?? null,
+            percentage: pr.percentage ?? null,
+            category: pr.category ?? null,
+            notes: pr.notes ?? null,
+            vendor_1: null, vendor_2: null, vendor_3: null,
+            vendor_notes: null, vendor_source: null,
+            case_weight: null, case_weight_uom: null,
+          });
+          batchFilled++;
+          batchChanges.push(`recipe.ingredients[+${pr.name || "row"}]`);
+        }
+        return;
+      }
+      matchedBatchIdx.add(bi);
+      const br = bIngs[bi];
+      for (const f of SHARED_FIELDS) {
+        if (isBlank(br[f]) && !isBlank(pr[f])) {
+          br[f] = pr[f];
+          batchFilled++;
+          batchChanges.push(`recipe.ingredients[${br.name || bi}].${f}`);
+        }
+      }
+      // Mirror weight ↔ weight_g if one side has it
+      if (isBlank(br.weight) && !isBlank(br.weight_g)) { br.weight = br.weight_g; batchFilled++; }
+      if (isBlank(br.weight_g) && !isBlank(br.weight)) { br.weight_g = br.weight; batchFilled++; }
+    });
+
+    // batch → PSS: fill blanks on matched rows (by name)
+    const pByName = new Map<string, number>();
+    pIngs.forEach((r, i) => { const k = norm(r?.name); if (k && !pByName.has(k)) pByName.set(k, i); });
+    bIngs.forEach((br, bi) => {
+      const key = norm(br?.name);
+      const pi = key ? pByName.get(key) : undefined;
+      if (pi === undefined) {
+        // PSS missing this ingredient — append from batch (name + shared fields only)
+        if (br?.name) {
+          pIngs.push({
+            name: br.name,
+            weight: br.weight ?? br.weight_g ?? null,
+            weight_unit: br.weight_unit ?? null,
+            percentage: br.percentage ?? null,
+            category: br.category ?? null,
+            notes: br.notes ?? null,
+          });
+          pssFilled++;
+          pssChanges.push(`recipe.ingredients[+${br.name}]`);
+        }
+        return;
+      }
+      const pr = pIngs[pi];
+      for (const f of PSS_FIELDS) {
+        const bVal = f === "weight" ? (br.weight ?? br.weight_g) : br[f];
+        if (isBlank(pr[f]) && !isBlank(bVal)) {
+          pr[f] = bVal;
+          pssFilled++;
+          pssChanges.push(`recipe.ingredients[${pr.name || pi}].${f}`);
+        }
+      }
+    });
+
+    pssExtracted.recipe = pssExtracted.recipe || {};
+    pssExtracted.recipe.ingredients = pIngs;
+    batchJson.recipe = batchJson.recipe || {};
+    batchJson.recipe.ingredients = bIngs;
 
     // Persist
     if (pssFilled > 0) {

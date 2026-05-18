@@ -457,6 +457,18 @@ serve(async (req) => {
       message: `Auto-generated from PSS submission. ${services.length} services flagged.`,
     });
 
+    // Reconcile so PSS values populate the freshly generated batch sheet rows.
+    try {
+      await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/reconcile-pss-batch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-internal-secret": Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        },
+        body: JSON.stringify({ pss_document_id, batch_sheet_id: upserted.id }),
+      });
+    } catch (e) { console.warn("reconcile after generate failed:", e); }
+
     return json({ ok: true, batch_sheet: upserted, recipe_warnings: recipeWarnings, services_to_offer: services });
   } catch (e) {
     console.error("generate-batch-sheet-from-pss error:", e);
