@@ -22,13 +22,16 @@ const SalesProjectWorkspace = () => {
   const [nda, setNda] = useState<any>(null);
   const [batchSheet, setBatchSheet] = useState<any>(null);
   const [openPrf, setOpenPrf] = useState(false);
+  const [openPss, setOpenPss] = useState(false);
   const [batchOpen, setBatchOpen] = useState(false);
   const [generatingBatch, setGeneratingBatch] = useState(false);
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<Record<TemplateKind, ActiveTemplate | null> | null>(null);
-  const [uploadingKind, setUploadingKind] = useState<"pss" | "nda" | null>(null);
+  const [uploadingKind, setUploadingKind] = useState<"pss" | "nda" | "batch_sheet" | null>(null);
   const pssInputRef = useRef<HTMLInputElement>(null);
   const ndaInputRef = useRef<HTMLInputElement>(null);
+  const batchInputRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     (async () => {
