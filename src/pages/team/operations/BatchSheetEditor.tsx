@@ -115,21 +115,29 @@ const BatchSheetEditor = () => {
 
   return (
     <TeamPage
-      eyebrow={`Batch sheet · v${sheet.version}`}
+      eyebrow={`Batch sheet · v${sheet.version}${isSuperseded ? " (superseded)" : ""}`}
       title={header.product_name || "Batch sheet"}
-      description={header.company_name || ""}
+      description={`${header.company_name || ""}${header.company_name ? " · " : ""}Last changed ${new Date(sheet.updated_at).toLocaleString()}${sheet.source_change ? ` · ${sheet.source_change.replace(/_/g, " ")}` : ""}`}
       actions={
         <>
           <Link to="/team/operations/batch-sheets" className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" /> All sheets
           </Link>
-          <Button size="sm" variant="outline" onClick={save} disabled={saving || !dirty}>
-            <Save className="w-4 h-4 mr-1" />{saving ? "Saving…" : "Save"}
+          <Button size="sm" variant="outline" onClick={() => setShowHistory((v) => !v)}>
+            <History className="w-4 h-4 mr-1" />History ({history.length})
+          </Button>
+          {sheet.pss_document_id && !isSuperseded && (
+            <Button size="sm" variant="outline" onClick={regenerateFromPss} disabled={regenerating}>
+              <RefreshCw className="w-4 h-4 mr-1" />{regenerating ? "Regenerating…" : "Regenerate from PSS"}
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={save} disabled={saving || !dirty || isSuperseded}>
+            <Save className="w-4 h-4 mr-1" />{saving ? "Saving…" : "Save as new version"}
           </Button>
           <Button size="sm" variant="outline" onClick={exportXlsx} disabled={exporting}>
             <Download className="w-4 h-4 mr-1" />{exporting ? "Exporting…" : "Excel"}
           </Button>
-          {sheet.status !== "approved" && (
+          {sheet.status !== "approved" && !isSuperseded && (
             <Button size="sm" onClick={() => setStatus("approved")}>
               <CheckCircle2 className="w-4 h-4 mr-1" />Approve
             </Button>
@@ -137,6 +145,42 @@ const BatchSheetEditor = () => {
         </>
       }
     >
+      {isSuperseded && (
+        <div className="mb-4 border border-amber-500/40 bg-amber-500/10 rounded-md p-3 text-sm">
+          This is an older version (read-only). A newer version (v{sheet.superseded_by_version}) exists.
+        </div>
+      )}
+      {showHistory && (
+        <section className="mb-6 border border-border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left">Version</th>
+                <th className="px-3 py-2 text-left">Changed</th>
+                <th className="px-3 py-2 text-left">Reason</th>
+                <th className="px-3 py-2 text-left">Status</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((h) => (
+                <tr key={h.id} className={`border-t border-border ${h.id === sheet.id ? "bg-accent/10" : ""}`}>
+                  <td className="px-3 py-2 font-medium">v{h.version}{!h.superseded_at && " (active)"}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{new Date(h.updated_at).toLocaleString()}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{(h.source_change || "—").replace(/_/g, " ")}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{h.status}</td>
+                  <td className="px-3 py-2 text-right">
+                    {h.id !== sheet.id && (
+                      <Link to={`/team/operations/batch-sheets/${h.id}`} className="text-xs text-accent hover:underline">Open</Link>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
       {/* Summary */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <SummaryCard label="Method" value={process.method || "—"} />
