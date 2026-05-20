@@ -81,13 +81,18 @@ export function PssPreviewDrawer({
 
   const hydrate = (d: any): Extracted => {
     const ex: Extracted = (d?.review_notes?.extracted as any) || {};
+    // Bug fix: vessel sometimes got auto-populated with the product name. Treat that as blank.
+    const productName = (ex.header?.product_name || "").toString().trim().toLowerCase();
+    const rawVessel = (ex.packaging?.primary?.vessel || "").toString().trim();
+    const cleanedVessel = productName && rawVessel.toLowerCase() === productName ? "" : rawVessel;
     return {
       header: ex.header || {},
       product: { ...(ex.product || {}), unit_dimensions: ex.product?.unit_dimensions || {} },
       recipe: { ...(ex.recipe || {}), ingredients: ex.recipe?.ingredients || [] },
       packaging: {
-        primary: ex.packaging?.primary || {},
+        primary: { ...(ex.packaging?.primary || {}), vessel: cleanedVessel },
         secondary: ex.packaging?.secondary || {},
+        shipper: ex.packaging?.shipper || {},
         palletizing: ex.packaging?.palletizing || {},
       },
       nutrition: {
@@ -100,12 +105,13 @@ export function PssPreviewDrawer({
       qc: ex.qc || {},
       certifications: ex.certifications || {},
       storage: ex.storage || {},
+      bake: ex.bake || {},
       document_history: ex.document_history && ex.document_history.length
         ? ex.document_history
         : [{ version: "", date: "", changes: "", approved_by: "" }],
       client_process_steps: ex.client_process_steps && ex.client_process_steps.length
-        ? ex.client_process_steps
-        : Array.from({ length: 8 }, (_, i) => ({ step: i + 1, text: "" })),
+        ? ex.client_process_steps.map((s: any, i: number) => ({ step: i + 1, ...s }))
+        : [{ step: 1, station: "", action: "", time_min: "", temp: "", notes: "" }],
     };
   };
 
