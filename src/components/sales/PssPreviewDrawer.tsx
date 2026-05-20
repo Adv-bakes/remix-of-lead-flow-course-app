@@ -155,8 +155,10 @@ export function PssPreviewDrawer({
 
   const updateIngredient = (i: number, key: keyof Ing, value: any) => {
     setData((prev) => {
-      const ings = [...(prev.recipe?.ingredients || [])];
+      let ings = [...(prev.recipe?.ingredients || [])];
       ings[i] = { ...(ings[i] || {}), [key]: value };
+      // Re-sync % whenever weight changes; leave manual % overrides alone otherwise.
+      if (key === "weight") ings = recomputePssPercents(ings);
       return { ...prev, recipe: { ...(prev.recipe || {}), ingredients: ings } };
     });
   };
@@ -173,7 +175,7 @@ export function PssPreviewDrawer({
     setData((prev) => {
       const ings = [...(prev.recipe?.ingredients || [])];
       ings.splice(i, 1);
-      return { ...prev, recipe: { ...(prev.recipe || {}), ingredients: ings } };
+      return { ...prev, recipe: { ...(prev.recipe || {}), ingredients: recomputePssPercents(ings) } };
     });
   };
 
