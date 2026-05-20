@@ -1,53 +1,72 @@
-# Fix PSS → Batch Sheet sync
+## What's wrong today
 
-## Problem
+Comparing your uploaded PSS and Batch Sheet templates to what the app renders:
 
-For Bahama Burger:
-- PSS `recipe.ingredients[*].weight` = 10, 6, 6, 12, … (populated)
-- Batch sheet `recipe.ingredients[*].weight` = null on every row (placeholders generated from the PSS row names only)
+**PSS preview** (`PssPreviewDrawer.tsx`) only renders the handful of fields we managed to extract. Empty sections of the template (nutrition table, allergen grid, QC specs, certifications/claims, ingredient source/grade column, processing steps, document history) are hidden — so you can't fill in what's missing.
 
-`reconcile-pss-batch` only copies the **whole ingredient array** when one side's array length is 0. Because the batch sheet already had 20-ish rows with `name` filled and other fields null, reconcile considered "both sides have ingredients" and copied nothing. Saving the PSS therefore appeared to do nothing on the batch sheet side.
+**Batch Sheet editor** (`BatchSheetEditor.tsx`):
+- The white pill chips at the top are `tp-btn` outline buttons that lose contrast on the black surface — the "white cells / illegible menu" you screenshotted.
+- The recipe grid only allows editing vendor / case-weight columns. `#`, `Ingredient`, `%`, `Weight (g)` are static text, so you can't paste or correct the formula.
+- The grid is only "weight in grams". Your template is a **formula calculator**: `% Formula`, per-unit weight (e.g. `original 16/pk`), grams-per-unit, and a scaled column that recomputes for whatever order quantity is being run. None of that exists.
+- Process / Method block is read-only, which is why you couldn't paste the method in.
+- "Total batch weight" is shown front-and-centre even though it has no meaning on either document — it changes per order.
 
-## Fix
+## Constraints to respect
 
-### 1. Per-ingredient field-level merge (`supabase/functions/reconcile-pss-batch/index.ts`)
+- **Sourcing Bot depends on this data.** Keep the existing JSON keys it reads stable: `recipe.ingredients[*].name`, `weight`, `weight_g`, `weight_unit`, `percentage`, `vendor_1/2/3`, `vendor_notes`, plus `packaging.*`, `header.*`, `product.*`. New fields are added alongside, never renamed or removed.
+- **Total batch weight has no purpose** on the PSS or the Batch Sheet (it varies per order). Remove the field from both editors and from the summary cards. The recipe stays a *per-unit formula*; scaling for a specific order happens at production time on the Production Batch screen, not here.
 
-Replace the current all-or-nothing block with a row-by-row merge:
+## Plan
 
-- Match rows between PSS and batch sheet by **normalized ingredient name** (lowercase, trimmed). Fall back to index when names are missing.
-- If a batch-sheet row exists for a PSS ingredient name, fill these batch fields only when they are blank:
-  - `weight`, `weight_g`, `weight_unit`, `percentage`, `category`, `notes`
-  - Never touch `vendor_1/2/3`, `vendor_notes`, `vendor_source`, `case_weight*` (those are staff-only)
-- If a PSS row exists for a batch ingredient and the PSS side is blank, fill `name`, `weight`, `weight_unit`, `percentage` back to PSS.
-- If a PSS ingredient has no batch-side match, append it as a new batch row (with vendor fields null).
-- Increment `pss_filled_count` / `batch_filled_count` per field changed and add per-row entries to `pss_changes` / `batch_changes` for the toast.
+### 1. PSS preview — show the full template, blank fields included
+Rewrite `PssPreviewDrawer.tsx` so every section of the AB PSS template is always rendered as editable inputs, even when the value is blank:
+- Header (already present) + Date, Prepared by, Approved by
+- 1 Product Description (category, appearance, texture, intended use, shelf life)
+- 2 Nutrition table (8 rows × amount/%DV, editable grid)
+- 3 Allergen declaration (Milk, Eggs, Tree nuts, Peanuts, Wheat/Gluten, Soy, Sesame — Yes/No + source)
+- 4 Packaging (primary name/size, secondary, label requirements, shipper, units/case)
+- 5 Storage & shelf life
+- 6 QC specs (weight, dimensions, color, moisture, pH, micro limits)
+- 7 Certifications/Claims (Kosher, GF, Organic, Non-GMO, Halal, None)
+- 8 Ingredients table — name, % or per-unit weight, **source/grade/spec**, function/purpose
+- 9 Processing steps (Step 1–8 + oven temp + bake time) — client-supplied, PSS-side only
+- 10 Document history (version / date / changes / approved by)
 
-Keep the existing scalar `FIELD_MAP` behavior unchanged.
+Remove the "Total batch weight" and "Recipe weight unit" fields from the PSS recipe block.
 
-### 2. Retrigger points
+All saved to `client_documents.review_notes.extracted` under the same shape so reconcile and the sourcing bot keep working. New sub-keys added under `nutrition`, `allergens`, `qc`, `certifications`, `document_history` — additive only, no rename of anything the bot reads.
 
-Currently sync only runs from the PSS drawer Save and the (now broken) ingredient copy. Also call `reconcile-pss-batch` from:
+### 2. Batch Sheet editor — rebuild around the per-unit formula calculator
+Replace the current recipe grid in `BatchSheetEditor.tsx` with a layout that mirrors your template:
 
-- `supabase/functions/generate-batch-sheet-from-pss/index.ts` — after the batch sheet is inserted, so a freshly generated batch sheet inherits PSS values immediately (today the generator builds skeleton rows with null weights, which is exactly what bit us).
-- `supabase/functions/revise-batch-sheet/index.ts` — after the AI revision saves, so batch-sheet edits flow back to PSS blanks.
+```text
+# | Ingredient (editable) | % Formula | Per-Unit Wt | Grams (per unit) | Preblend | Vendor 1 | Vendor 2 | Vendor 3 | Notes
+```
 
-### 3. Manual "Sync now" from the Batch Sheet editor
+- All cells editable (including `#`, `Ingredient`, `%`, weights).
+- `%` auto-computes from `grams_per_unit / sum(grams_per_unit)` when grams changes, and vice-versa. Sum-of-% must equal 100; show a red badge if it drifts.
+- Footer row showing summed `%` (with the drift badge) — no "total batch weight" anywhere.
+- Add **Processing Specifications** block above the recipe, editable: Recipe Method & Procedure (multi-step rows with `# ingredients to kettle`, `min to melt`, `# ingredients to mixer`, `total mix min`, `Low/Med/High speed` columns from the template), plus Bake @ Temp / Min row. Free-text "Method" paste area at the top of this block so you can drop in the method text you tried to paste earlier.
+- Keep the existing Packaging block but make it editable.
+- Keep History / Sync / Regenerate / Export / Approve actions.
+- Remove the "Total batch" summary card. Replace with "Unit weight (raw)" and "Method" only.
 
-`src/pages/team/operations/BatchSheetEditor.tsx` should expose the same Sync button the PSS drawer has (calls `reconcile-pss-batch` with `{ batch_sheet_id }`) and refresh on success. This gives staff a one-click way to pull PSS updates without reopening the PSS.
+Saves go through `revise-batch-sheet` (already versioned). `data_json` gets two new sub-keys: `process.specifications` (structured) and `process.method_text` (free-text paste). The xlsx exporter already reads `process.pre_bake.steps`; on save we'll also mirror the structured rows into that existing path so the Excel export keeps producing the same file without changes.
 
-### 4. One-time backfill for the current Bahama Burger sheet
+### 3. Header chips legibility
+The five white pills at the top of the editor are caused by `tp-btn` rendering on the dark `tp-surface`. Fix:
+- Restyle `tp-btn` (or add a `tp-btn-ghost` variant) so default state is transparent with a 1px gold/hairline border and `--tp-text` label.
+- Active/primary keeps the current filled look.
+- Apply to both the BatchSheetEditor and PssPreviewDrawer headers.
 
-After deploy, the user can hit Sync from either side and the 16 ingredient weights will populate. No migration needed — the data is already in the PSS.
+### 4. Out of scope (call out so we don't drift)
+- AI auto-fill of PSS blanks from the batch sheet — already handled by `reconcile-pss-batch`. We're only making the blanks visible/editable. Reconcile keeps copying the same field set the sourcing bot reads.
+- Order-quantity scaling — belongs on the Production Batch screen, not the formula sheet.
+- xlsx export redesign — current exporter already matches the AB column layout; the structured-row mirror above preserves it.
+- PSS Section 9 (client steps) and batch-sheet processing specs are kept separate and never synced; only the batch sheet specs are proprietary.
 
-## Out of scope
-
-- Conflict resolution when both sides have different non-null values (still leave both alone; surface "X conflicts" in the toast in a follow-up).
-- Process steps remain batch-sheet-only (proprietary).
-- Packaging palletizing dims, secondary case dims — covered by existing scalar FIELD_MAP, not changed here.
-
-## Files touched
-
-- `supabase/functions/reconcile-pss-batch/index.ts` — new per-row merge.
-- `supabase/functions/generate-batch-sheet-from-pss/index.ts` — call reconcile at the end.
-- `supabase/functions/revise-batch-sheet/index.ts` — call reconcile at the end.
-- `src/pages/team/operations/BatchSheetEditor.tsx` — add Sync button + handler.
+### Files touched
+- `src/components/sales/PssPreviewDrawer.tsx` — full rewrite of body, same save contract, total-batch field removed.
+- `src/pages/team/operations/BatchSheetEditor.tsx` — editable recipe grid, editable process block with method paste area, summary cards trimmed.
+- `src/index.css` (or wherever `tp-btn` lives) — chip contrast fix.
+- No DB migration. No edge function changes. Sourcing-bot field contract unchanged.
