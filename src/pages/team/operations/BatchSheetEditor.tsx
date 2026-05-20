@@ -227,6 +227,31 @@ const BatchSheetEditor = () => {
       process: newProcess,
       packaging: persistedPkg,
     };
+
+    // Draft-stage edits update in place. Once the sheet is finalized/approved,
+    // edits create a new version via revise-batch-sheet.
+    const isDraftStage = !sheet.status || sheet.status === "draft";
+
+    if (isDraftStage) {
+      const { error: updErr } = await (supabase as any)
+        .from("batch_sheets")
+        .update({
+          data_json: dataJson,
+          last_edited_by: (await (supabase as any).auth.getUser()).data?.user?.id ?? null,
+          source_change: "staff_edit",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sheet.id);
+      setSaving(false);
+      if (updErr) { toast.error(updErr.message); return; }
+      toast.success("Saved");
+      setSheet((prev: any) => ({ ...prev, data_json: dataJson, updated_at: new Date().toISOString() }));
+      setDirty(false);
+      // Reconcile blanks back to PSS in the background — non-blocking.
+      (supabase as any).functions.invoke("reconcile-pss-batch", { body: { batch_sheet_id: sheet.id } }).catch(() => {});
+      return;
+    }
+
     const { data, error } = await (supabase as any).functions.invoke("revise-batch-sheet", {
       body: { batch_sheet_id: sheet.id, data_json: dataJson, source_change: "staff_edit" },
     });
