@@ -119,14 +119,7 @@ const BatchSheetEditor = () => {
   const isSuperseded = !!sheet?.superseded_at;
 
   // ---- Ingredient editing with auto-% recompute ----
-  const recomputePercents = (rows: Ingredient[]): Ingredient[] => {
-    const sum = rows.reduce((s, r) => s + (Number(r.weight_g ?? r.weight) || 0), 0);
-    if (!sum) return rows;
-    return rows.map((r) => {
-      const g = Number(r.weight_g ?? r.weight) || 0;
-      return { ...r, percentage: Math.round((g / sum) * 10000) / 100 };
-    });
-  };
+  const recomputePercents = _recomputePercents;
 
   const updateIng = (idx: number, patch: Partial<Ingredient>) => {
     if (isSuperseded) return;
