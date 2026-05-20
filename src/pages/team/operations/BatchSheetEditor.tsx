@@ -75,7 +75,7 @@ const BatchSheetEditor = () => {
     if (error) { toast.error(error.message); return; }
     setSheet(data);
     const d = data.data_json || {};
-    setIngs(d.recipe?.ingredients || []);
+    setIngs(_recomputePercents(d.recipe?.ingredients || []));
     setMethodText(d.process?.method_text || d.process?.method || "");
     const specs: MixStep[] = d.process?.specifications && d.process.specifications.length
       ? d.process.specifications.map((s: any, i: number) => ({ step: i + 1, ...s }))
