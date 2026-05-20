@@ -2,8 +2,9 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamPage } from "@/components/team/TeamPage";
+import { PssPreviewDrawer } from "@/components/sales/PssPreviewDrawer";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Save, CheckCircle2, History, RefreshCw, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Save, CheckCircle2, History, RefreshCw, Plus, Trash2, FileText } from "lucide-react";
 
 interface Ingredient {
   name?: string | null;
