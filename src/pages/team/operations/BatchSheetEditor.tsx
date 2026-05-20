@@ -46,6 +46,8 @@ const BatchSheetEditor = () => {
   const [mixSteps, setMixSteps] = useState<MixStep[]>([]);
   const [bakeTemp, setBakeTemp] = useState<string>("");
   const [bakeMin, setBakeMin] = useState<string>("");
+  const [bakeInternal, setBakeInternal] = useState<string>("");
+  const [bakeInternalUnit, setBakeInternalUnit] = useState<string>("°F");
   const [editablePkg, setEditablePkg] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -64,19 +66,29 @@ const BatchSheetEditor = () => {
     setIngs(d.recipe?.ingredients || []);
     setMethodText(d.process?.method_text || d.process?.method || "");
     const specs: MixStep[] = d.process?.specifications && d.process.specifications.length
-      ? d.process.specifications
+      ? d.process.specifications.map((s: any, i: number) => ({ step: i + 1, ...s }))
       : (d.process?.pre_bake?.steps || []).map((s: any, i: number) => ({
           step: i + 1,
+          station: s.station || "",
           action: s.action || "",
           total_mix_min: s.mix_time_min != null ? String(s.mix_time_min) : "",
           speed: s.mix_speed || "",
+          temp: s.temperature != null ? String(s.temperature) : "",
+          notes: s.notes || "",
         }));
     setMixSteps(specs.length ? specs : [{ step: 1 }]);
     setBakeTemp(d.process?.bake?.temperature != null ? String(d.process.bake.temperature) : "");
     setBakeMin(d.process?.bake?.time_minutes != null ? String(d.process.bake.time_minutes) : "");
+    setBakeInternal(d.process?.bake?.internal_temp_target != null ? String(d.process.bake.internal_temp_target) : "");
+    setBakeInternalUnit(d.process?.bake?.internal_temp_unit || "°F");
+    // Strip the product-name-as-vessel bug
+    const productName = (d.header?.product_name || "").toString().trim().toLowerCase();
+    const rawVessel = (d.packaging?.primary?.vessel || "").toString().trim();
+    const cleanedVessel = productName && rawVessel.toLowerCase() === productName ? "" : rawVessel;
     setEditablePkg({
-      primary: { ...(d.packaging?.primary || {}) },
+      primary: { ...(d.packaging?.primary || {}), vessel: cleanedVessel },
       secondary: { ...(d.packaging?.secondary || {}) },
+      shipper: { ...(d.packaging?.shipper || {}) },
       palletizing: { ...(d.packaging?.palletizing || {}) },
     });
     setDirty(false);
