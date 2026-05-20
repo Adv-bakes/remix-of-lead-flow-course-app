@@ -23,18 +23,29 @@ type Ing = {
   notes?: string | null;
 };
 
+type ProcStep = {
+  step?: number;
+  station?: string;
+  text?: string;        // legacy free-text
+  action?: string;
+  time_min?: string;
+  temp?: string;
+  notes?: string;
+};
+
 type Extracted = {
   header?: any;
   product?: any;
   recipe?: { ingredients?: Ing[] };
-  packaging?: { primary?: any; secondary?: any; palletizing?: any };
+  packaging?: { primary?: any; secondary?: any; shipper?: any; palletizing?: any };
   nutrition?: { rows?: { nutrient: string; amount?: string; dv?: string }[]; serving_size?: string };
   allergens?: Record<string, { present?: boolean; source?: string }>;
   qc?: any;
   certifications?: Record<string, boolean | string>;
   storage?: any;
+  bake?: { temperature?: any; time_minutes?: any; internal_temp_target?: any; internal_temp_unit?: string };
   document_history?: { version?: string; date?: string; changes?: string; approved_by?: string }[];
-  client_process_steps?: { step: number; text: string }[];
+  client_process_steps?: ProcStep[];
 };
 
 const NUTRIENT_ROWS = [
@@ -46,6 +57,12 @@ const NUTRIENT_ROWS = [
 const ALLERGEN_KEYS = ["Milk", "Eggs", "Tree nuts", "Peanuts", "Wheat / Gluten", "Soy", "Sesame", "Fish", "Shellfish"];
 
 const CERT_KEYS = ["Kosher", "Gluten-Free", "Organic", "Non-GMO", "Halal", "Vegan", "None"];
+
+const STATIONS = ["Prep", "Kettle", "Mixer", "Sheeter", "Depositor", "Oven", "Cool", "Pack", "Other"];
+
+const VESSEL_TYPES = ["Bag", "Pouch", "Tray", "Clamshell", "Film / Flow-wrap", "Jar", "Bottle", "Box", "Other"];
+const SECONDARY_TYPES = ["Retail box", "Retail display", "Caddy", "Shrink bundle", "None", "Other"];
+const SHIPPER_TYPES = ["Corrugated RSC", "Telescoping", "Tray pack", "Other"];
 
 export function PssPreviewDrawer({
   pssDocumentId,
